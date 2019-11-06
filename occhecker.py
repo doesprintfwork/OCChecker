@@ -3,8 +3,6 @@ import os,time,sys,plistlib
 class occhecker:
 
     def __init__(self):
-        self.efiloc = ''
-        self.plistpath = ''
         self.drivers = ['FwRuntimeServices.efi', 'ApfsDriverLoader.efi', 'HFSPlus.efi']
         self.kexts = ['Lilu.kext', 'NullCPUPowerManagement.kext', 'WhateverGreen.kext']
         self.ocfiles = ['config.plist', 'OpenCore.efi']
@@ -104,7 +102,7 @@ class occhecker:
             time.sleep(0.1)
         time.sleep(0.5)
 
-        print('Checking needed kexts in Kexts folder... ', end='')
+        print('Checking needed kexts in Kexts folder...')
         os.chdir('./Kexts')
         for k in self.kexts:
             print(' - {}... '.format(k),end='')
@@ -134,14 +132,14 @@ class occhecker:
         print('')
         print('Loading config.plist... ', end='')
         c = open('config.plist', 'rb')
-        config = plistlib.load(c)
+        self.config = plistlib.load(c)
         print('Done')
         time.sleep(0.1)
 
         print('Checking root config structure...')
         for x in self.config:
             print(' - {}... '.format(x),end='')
-            if not x in config:
+            if not x in self.config:
                 self.missing('{} in config.plist'.format(x))
             print('OK')
             time.sleep(0.1)
@@ -150,10 +148,41 @@ class occhecker:
             print('Checking {} structure... '.format(p))
             for x in self.config[p]:
                 print(' - {}/{}... '.format(p,x),end='')
-                if not x in config[p]:
+                if not x in self.config[p]:
                     self.missing('{}/{} in config.plist'.format(p,x))
                 print('OK')
                 time.sleep(0.1)
+        time.sleep(1)
+        self.checkacpi()
+
+    def checkacpi(self):
+        self.clear()
+        self.title('Checking ACPI...')
+        files = os.listdir('./ACPI')
+        print('')
+        print('Checking ACPI/Add...')
+        for f in files:
+            if f.endswith('.aml') and not f.startswith('._'):
+                b = False
+                print(' - Checking {}... '.format(f),end='')
+                for item in self.config['ACPI']['Add']:
+                    if item['Path'] == f:
+                        b = True
+                        if 'Enabled' in item:
+                            if item['Enabled'] == False:
+                                print('Error')
+                                print('   Enabled is not set to True in ACPI/Add/{}'.format(f))
+                            else:
+                                print('OK')
+                        else:
+                            print('Error')
+                            print('   Enabled is not set in ACPI/Add/{}'.format(f))
+                        break
+                if b == False:
+                    print('Error')
+                    print('   Missing {} in ACPI/Add'.format(f))
+        print('Done')
+            
 
     def main(self):
         # Clear the window first
