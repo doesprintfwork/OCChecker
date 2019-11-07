@@ -27,6 +27,20 @@ class occhecker:
         self.nvram = ['Add', 'Block', 'LegacyEnable', 'LegacySchema']
         self.platforminfo = ['Automatic', 'Generic', 'UpdateDataHub', 'UpdateNVRAM', 'UpdateSMBIOS', 'UpdateSMBIOSMode']
         self.uefi = ['ConnectDrivers', 'Drivers', 'Input', 'Protocols', 'Quirks']
+        self.acpiquirks = ['FadtEnableReset', 'NormalizeHeaders', 'RebaseRegions', 'ResetHwSig', 'ResetLogoStatus']
+        self.acpiquirkset = {
+            'FadtEnableReset': False,
+            'NormalizeHeaders': False,
+            'RebaseRegions': False,
+            'ResetHwSig': False,
+            'ResetLogoStatus': False
+        }
+    
+    def pred(self, string):
+        return("\033[91m{}\033[00m" .format(string))
+
+    def pgreen(self, string):
+        return("\033[92m{}\033[00m" .format(string))
 
     def clear(self):
         if os.name == 'nt':
@@ -68,12 +82,12 @@ class occhecker:
         print('')
         print('Checking root folder structure... ', end='')
         if os.path.isdir('./BOOT') and os.path.isdir('./OC'):
-            print('OK')
+            print(self.pgreen('OK'))
         else:
-            print('Error')
+            print(self.pred('Error'))
             print('')
-            print('Wrong folder structure!')
-            print('Probably missing a folder')
+            print(self.pred('Wrong folder structure!'))
+            print(self.pred('Probably missing a folder'))
             print('')
             input('Press [Enter] to exit... ')
             sys.exit()
@@ -81,9 +95,9 @@ class occhecker:
 
         print('Checking BOOT folder... ', end='')
         if os.path.isfile('./BOOT/BOOTX64.efi'):
-            print('OK')
+            print(self.pgreen('OK'))
         else:
-            self.missing('BOOTX64.efi')
+            self.missing(self.pred('BOOTX64.efi'))
         time.sleep(0.1)
 
         print('Checking OC folder...')
@@ -91,14 +105,14 @@ class occhecker:
         for d in self.ocfolders:
             print(' - {}... '.format(d),end='')
             if not os.path.isdir(d):
-                self.missing(d)
-            print('OK')
+                self.missing(self.pred(d))
+            print(self.pgreen('OK'))
             time.sleep(0.1)
         for f in self.ocfiles:
             print(' - {}... '.format(f),end='')
             if not os.path.isfile(f):
-                self.missing(f)
-            print('OK')
+                self.missing(self.pred(f))
+            print(self.pgreen('OK'))
             time.sleep(0.1)
         time.sleep(0.5)
 
@@ -107,21 +121,21 @@ class occhecker:
         for k in self.kexts:
             print(' - {}... '.format(k),end='')
             if not os.path.isdir(k):
-                self.missing(k)
-            print('OK')
+                self.missing(self.pred(k))
+            print(self.pgreen('OK'))
             time.sleep(0.1)
         print(' - {}... '.format('FakeSMC.kext or VirtualSMC.kext'),end='')
         if not (os.path.isdir('FakeSMC.kext') or os.path.isdir('VirtualSMC.kext')):
-            self.missing('FakeSMC.kext or VirtualSMC.kext')
-        print('OK')
+            self.missing(self.pred('FakeSMC.kext or VirtualSMC.kext'))
+        print(self.pgreen('OK'))
         time.sleep(0.5)
 
         print('Checking needed drivers in Drivers folder... ',end="")
         os.chdir('../Drivers')
         for d in self.drivers:
             if not os.path.isfile(d):
-                self.missing(d)
-        print('OK')
+                self.missing(self.pred(d))
+        print(self.pgreen('OK'))
         time.sleep(1)
         self.checkpliststc()
 
@@ -133,15 +147,15 @@ class occhecker:
         print('Loading config.plist... ', end='')
         c = open('config.plist', 'rb')
         self.config = plistlib.load(c)
-        print('Done')
+        print(self.pgreen('Done'))
         time.sleep(0.1)
 
         print('Checking root config structure...')
         for x in self.config:
             print(' - {}... '.format(x),end='')
             if not x in self.config:
-                self.missing('{} in config.plist'.format(x))
-            print('OK')
+                self.missing(self.pred('{} in config.plist'.format(x)))
+            print(self.pgreen('OK'))
             time.sleep(0.1)
 
         for p in self.config:
@@ -149,41 +163,59 @@ class occhecker:
             for x in self.config[p]:
                 print(' - {}/{}... '.format(p,x),end='')
                 if not x in self.config[p]:
-                    self.missing('{}/{} in config.plist'.format(p,x))
-                print('OK')
+                    self.missing(self.pred('{}/{} in config.plist'.format(p,x)))
+                print(self.pgreen('OK'))
                 time.sleep(0.1)
         time.sleep(1)
         self.checkacpi()
 
     def checkacpi(self):
         self.clear()
-        self.title('Checking ACPI...')
+        self.title('Checking ACPI... ')
         files = os.listdir('./ACPI')
         print('')
-        print('Checking ACPI/Add...')
-        for f in files:
-            if f.endswith('.aml') and not f.startswith('._'):
-                b = False
-                print(' - Checking {}... '.format(f),end='')
-                for item in self.config['ACPI']['Add']:
-                    if item['Path'] == f:
-                        b = True
-                        if 'Enabled' in item:
-                            if item['Enabled'] == False:
-                                print('Error')
-                                print('   Enabled is not set to True in ACPI/Add/{}'.format(f))
+        if files != ['.DS_Store','._.DS_Store']:
+            print('Checking ACPI/Add...')
+            for f in files:
+                if f.endswith('.aml') and not f.startswith('._'):
+                    b = False
+                    print(' - Checking {}... '.format(f),end='')
+                    for item in self.config['ACPI']['Add']:
+                        if item['Path'] == f:
+                            b = True
+                            if 'Enabled' in item:
+                                if item['Enabled'] == False:
+                                    print(self.pred('Error'))
+                                    print(self.pred('  Enabled is not set to True in ACPI/Add/{}'.format(f)))
+                                else:
+                                    print(self.pgreen('OK'))
                             else:
-                                print('OK')
-                        else:
-                            print('Error')
-                            print('   Enabled is not set in ACPI/Add/{}'.format(f))
-                        break
-                if b == False:
-                    print('Error')
-                    print('   Missing {} in ACPI/Add'.format(f))
-        print('Done')
+                                print(self.pred('Error'))
+                                print(self.pred('   Enabled is not set in ACPI/Add/{}'.format(f)))
+                            break
+                    if b == False:
+                        print(self.pred('Error'))
+                        print(self.pred('   Missing {} in ACPI/Add'.format(f)))
+                time.sleep(0.1)
+        else:
+            print('Skipping ACPI/Add...')
+        time.sleep(0.1)
+        print('Checking Quirks...')
+        for quirk in self.acpiquirks:
+            print(' - Checking ACPI/Quirks/{}... '.format(quirk), end='')
+            if quirk in self.config['ACPI']['Quirks']:
+                if self.acpiquirkset[quirk] == self.config['ACPI']['Quirks'][quirk]:
+                    print(self.pgreen('OK'))
+                else:
+                    print(self.pred('Error'))
+                    print(self.pred('   {} should be set to {}'.format(quirk, self.acpiquirkset[quirk])))
+            else:
+                print(self.pred('Error'))
+                print(self.pred('Missing {} in config.plist'.format(quirk)))
+            time.sleep(0.1)
+        time.sleep(0.5)
+        print(self.pgreen('Done'))
             
-
     def main(self):
         # Clear the window first
         self.clear()
