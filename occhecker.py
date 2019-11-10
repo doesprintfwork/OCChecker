@@ -52,6 +52,7 @@ class occhecker:
             'Kernel': {
                 'AppleXcpmExtraMsrs': False,
                 'CustomSMBIOSGuid': False,
+                'DisableIoMapper': True,
                 'PanicNoKextDump': True,
                 'PowerTimeoutKernelPanic': True
             }, 
@@ -200,9 +201,9 @@ class occhecker:
         for p in self.configstruc:
             print('Checking {} structure... '.format(p))
             if p in self.config:
-                for x in self.config[p]:
+                for x in self.configstruc[p]:
                     print(' - {}/{}... '.format(p,x),end='')
-                    if not x in self.configstruc[p]:
+                    if not x in self.config[p]:
                         self.missing(self.pred('{}/{} in config.plist'.format(p,x)))
                         self.error.append('Missing {}/{} in config.plist'.format(p,x))
                     print(self.pgreen('OK'))
@@ -242,8 +243,58 @@ class occhecker:
         time.sleep(0.5)
         print(self.pgreen('Done'))
         time.sleep(1)
-        self.printerror()
+        self.checkadd()
     
+    
+
+    def checkadd(self):
+        self.clear()
+        self.title('Checking Add...')
+        print('')
+        files = os.listdir('./ACPI')
+        if 'ACPI' in self.config:
+            print('')
+            print('Checking ACPI folder -> ACPI/Add...')
+            for f in files:
+                if f.endswith('.aml') and not f.startswith('._'):
+                    b = False
+                    print(' - Checking {}... '.format(f),end='')
+                    for item in self.config['ACPI']['Add']:
+                        if item['Path'] == f:
+                            b = True
+                            if 'Enabled' in item:
+                                if item['Enabled'] == False:
+                                    print(self.pred('Error'))
+                                    print(self.pred('   Enabled is not set to True in ACPI/Add/{}'.format(f)))
+                                    self.error.append('Enabled is not set to True in ACPI/Add/{}'.format(f))
+                                else:
+                                    print(self.pgreen('OK'))
+                            else:
+                                print(self.pred('Error'))
+                                print(self.pred('    Enabled is not set in ACPI/Add/{}'.format(f)))
+                                self.error.append('Enabled is not set in ACPI/Add/{}'.format(f))
+                            break
+                    if b == False:
+                        print(self.pred('Error'))
+                        print(self.pred('   Missing {} in ACPI/Add'.format(f)))
+                        self.error.append('Missing {} in ACPI/Add'.format(f))
+                time.sleep(0.05)
+            print('Checking ACPI/Add -> ACPI folder...')
+            for item in self.config['ACPI']['Add']:
+                if item['Enabled'] == True:
+                    print(' - Checking {}...'.format(item['Path']), end='')
+                    if item['Path'] not in files:
+                        print(self.pred('Error'))
+                        print(self.pred("   Enabled {} in config.plist which doesn't exists".format(item['Path'])))
+                        self.error.append("Enabled {} in config.plist which doesn't exists".format(item['Path']))
+                    else:
+                        print(self.pgreen('OK'))
+        else:
+            print('Skipping ACPI/Add because of missing ACPI in config.plist')
+            time.sleep(0.05)
+        time.sleep(0.5)
+        self.printerror()
+            
     def printerror(self):
         self.clear()
         self.title('Errors...')
@@ -257,42 +308,6 @@ class occhecker:
         else:
             print(self.pgreen('None'))
 
-    def checkadd(self):
-        self.title('Checking Add...')
-        print('')
-        if 'ACPI' in self.config:
-            files = os.listdir('./ACPI')
-            print('')
-            if files != ['.DS_Store','._.DS_Store']:
-                print('Checking ACPI/Add...')
-                for f in files:
-                    if f.endswith('.aml') and not f.startswith('._'):
-                        b = False
-                        print(' - Checking {}... '.format(f),end='')
-                        for item in self.config['ACPI']['Add']:
-                            if item['Path'] == f:
-                                b = True
-                                if 'Enabled' in item:
-                                    if item['Enabled'] == False:
-                                        print(self.pred('Error'))
-                                        print(self.pred('   Enabled is not set to True in ACPI/Add/{}'.format(f)))
-                                        self.error.append('Enabled is not set to True in ACPI/Add/{}'.format(f))
-                                    else:
-                                        print(self.pgreen('OK'))
-                                else:
-                                    print(self.pred('Error'))
-                                    print(self.pred('    Enabled is not set in ACPI/Add/{}'.format(f)))
-                                    self.error.append('Enabled is not set in ACPI/Add/{}'.format(f))
-                                break
-                        if b == False:
-                            print(self.pred('Error'))
-                            print(self.pred('   Missing {} in ACPI/Add'.format(f)))
-                            self.error.append('Missing {} in ACPI/Add'.format(f))
-                    time.sleep(0.05)
-            else:
-                print('Skipping ACPI/Add...')
-            time.sleep(0.05)
-            
     def main(self):
         # Clear the window first
         self.clear()
