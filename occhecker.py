@@ -28,22 +28,39 @@ class occhecker:
         self.nvram = ['Add','Block']
         self.platforminfo = ['Automatic','Generic','UpdateDataHub','UpdateNVRAM','UpdateSMBIOS','UpdateSMBIOSMode']
         self.uefi = ['ConnectDrivers','Drivers','Input','Protocols','Quirks']
-        self.acpiquirks = ['FadtEnableReset','NormalizeHeaders','RebaseRegions','ResetHwSig','ResetLogoStatus']
-        self.acpiquirkset = {
-            'FadtEnableReset': False,
-            'NormalizeHeaders': False,
-            'RebaseRegions': False,
-            'ResetHwSig': False,
-            'ResetLogoStatus': False
-        }
-        self.booterquirks = ['AvoidRuntimeDefrag','DevirtualiseMmio','DisableSingleUser','DisableVariableWrite','DiscardHibernateMap','EnableSafeModeSlide','EnableWriteUnprotector','ForceExitBootServices','ProtectCsmRegion','ProvideCustomSlide','SetupVirtualMap','ShrinkMemoryMap']
-        self.booterquirkset = {
-            'AvoidRuntimeDefrag': True,
-            'DevirtualiseMmio': False,
-            'DisableSingleUser': False,
-            'DisableVariableWrite': False,
-            'DiscardHibernateMap': False,
-            'EnableSafeModeSlide': True
+        self.quirks = {
+            'ACPI': {
+                'FadtEnableReset': False,
+                'NormalizeHeaders': False,
+                'RebaseRegions': False,
+                'ResetHwSig': False,
+                'ResetLogoStatus': False
+            }, 
+            'Booter': {
+                'AvoidRuntimeDefrag': True,
+                'DevirtualiseMmio': False,
+                'DisableVariableWrite': False,
+                'DiscardHibernateMap': False,
+                'EnableSafeModeSlide': True,
+                'EnableWriteUnprotector': True,
+                'ForceExitBootServices': False,
+                'ProtectCsmRegion': False,
+                'ProvideCustomSlide': True,
+                'SetupVirtualMap': True,
+                'ShrinkMemoryMap': False,
+            }, 
+            'Kernel': {
+                'AppleXcpmExtraMsrs': False,
+                'CustomSMBIOSGuid': False,
+                'PanicNoKextDump': True,
+                'PowerTimeoutKernelPanic': True
+            }, 
+            'UEFI': {
+                'AvoidHighAlloc': False,
+                'ExitBootServicesDelay': 0,
+                'IgnoreInvalidFlexRatio': False,
+                'ProvideConsoleGop': True
+            }
         }
     
     def pred(self, string):
@@ -99,14 +116,14 @@ class occhecker:
             print('')
             input('Press any key to exit... ')
             sys.exit()
-        time.sleep(0.1)
+        time.sleep(0.05)
 
         print('Checking BOOT folder... ', end='')
         if os.path.isfile('./BOOT/BOOTX64.efi'):
             print(self.pgreen('OK'))
         else:
             self.missing(self.pred('BOOTX64.efi'))
-        time.sleep(0.1)
+        time.sleep(0.05)
 
         print('Checking OC folder...')
         os.chdir('./OC')
@@ -117,7 +134,7 @@ class occhecker:
                 input('Press any key to exit...')
                 sys.exit()
             print(self.pgreen('OK'))
-            time.sleep(0.1)
+            time.sleep(0.05)
         for f in self.ocfiles:
             print(' - {}... '.format(f),end='')
             if not os.path.isfile(f):
@@ -125,8 +142,8 @@ class occhecker:
                 input('Press any key to exit...')
                 sys.exit()
             print(self.pgreen('OK'))
-            time.sleep(0.1)
-        time.sleep(0.5)
+            time.sleep(0.05)
+        time.sleep(0.05)
 
         print('Checking needed kexts in Kexts folder...')
         os.chdir('./Kexts')
@@ -135,14 +152,14 @@ class occhecker:
             if not os.path.isdir(k):
                 self.missing(self.pred(k))
             print(self.pgreen('OK'))
-            time.sleep(0.1)
+            time.sleep(0.05)
         print(' - {}... '.format('FakeSMC.kext or VirtualSMC.kext'),end='')
         if not (os.path.isdir('FakeSMC.kext') or os.path.isdir('VirtualSMC.kext')):
             self.missing(self.pred('FakeSMC.kext or VirtualSMC.kext'))
             self.error.append('Missing FakeSMC.kext or VirtualSMC.kext in Kexts folder')
         else:
             print(self.pgreen('OK'))
-        time.sleep(0.5)
+        time.sleep(0.05)
 
         print('Checking needed drivers in Drivers folder...')
         os.chdir('../Drivers')
@@ -153,7 +170,9 @@ class occhecker:
                 self.error.append('Missing {} in Drivers folder'.format(d))
             else:
                 print(self.pgreen('OK'))
-            time.sleep(0.1)
+            time.sleep(0.05)
+        time.sleep(0.5)
+        print(self.pgreen('Done'))
         time.sleep(1)
         self.checkpliststc()
 
@@ -166,7 +185,7 @@ class occhecker:
         c = open('config.plist', 'rb')
         self.config = plistlib.load(c)
         print(self.pgreen('Done'))
-        time.sleep(0.1)
+        time.sleep(0.05)
 
         print('Checking root config structure...')
         for x in self.configstruc:
@@ -176,7 +195,7 @@ class occhecker:
                 self.error.append('Missing {} in config.plist'.format(x))
             else:
                 print(self.pgreen('OK'))
-            time.sleep(0.1)
+            time.sleep(0.05)
 
         for p in self.configstruc:
             print('Checking {} structure... '.format(p))
@@ -187,16 +206,60 @@ class occhecker:
                         self.missing(self.pred('{}/{} in config.plist'.format(p,x)))
                         self.error.append('Missing {}/{} in config.plist'.format(p,x))
                     print(self.pgreen('OK'))
-                    time.sleep(0.1)
+                    time.sleep(0.05)
             else:
                 print(self.pred('Skipped because of missing {}'.format(p)))
-                time.sleep(0.1)
+                time.sleep(0.05)
+        time.sleep(0.5)
+        print(self.pgreen('Done'))
         time.sleep(1)
-        self.checkacpi()
+        self.checkquirks()
 
-    def checkacpi(self):
+    def checkquirks(self):
         self.clear()
-        self.title('Checking ACPI... ')
+        self.title('Checking Quirks... ')
+        print('')
+        for q in self.quirks:
+            if q in self.config:
+                print('Checking {}/Quirks'.format(q))
+                for quirk in self.quirks[q]:
+                    print(' - Checking {}/Quirks/{}... '.format(q,quirk), end='')
+                    if quirk in self.config[q]['Quirks']:
+                        if self.quirks[q][quirk] == self.config[q]['Quirks'][quirk]:
+                            print(self.pgreen('OK'))
+                        else:
+                            print(self.pred('Error'))
+                            print(self.pred('   {}/Quirks/{} should be set to {}'.format(q,quirk, self.quirks[q][quirk])))
+                            self.error.append('{}/Quirks/{} should be set to {}'.format(q,quirk, self.quirks[q][quirk]))
+                    else:
+                        print(self.pred('Error'))
+                        print(self.pred('   Missing {}/Quirks/{} in config.plist'.format(q,quirk)))
+                        self.error.append('Missing {}/Quirks/{} in config.plist'.format(q,quirk))
+                    time.sleep(0.05)
+            else:
+                print(self.pred('Skipping {} part because of missing ACPI in config.plist...'.format(q)))
+                time.sleep(0.05)
+        time.sleep(0.5)
+        print(self.pgreen('Done'))
+        time.sleep(1)
+        self.printerror()
+    
+    def printerror(self):
+        self.clear()
+        self.title('Errors...')
+        print('')
+        print(self.pred('All errors: '), end='')
+        time.sleep(0.1)
+        if self.error != []:
+            print('')
+            for n in self.error:
+                print(self.pred(' - {}'.format(n)))
+        else:
+            print(self.pgreen('None'))
+
+    def checkadd(self):
+        self.title('Checking Add...')
+        print('')
         if 'ACPI' in self.config:
             files = os.listdir('./ACPI')
             print('')
@@ -225,38 +288,10 @@ class occhecker:
                             print(self.pred('Error'))
                             print(self.pred('   Missing {} in ACPI/Add'.format(f)))
                             self.error.append('Missing {} in ACPI/Add'.format(f))
-                    time.sleep(0.1)
+                    time.sleep(0.05)
             else:
                 print('Skipping ACPI/Add...')
-            time.sleep(0.1)
-            print('Checking Quirks...')
-            for quirk in self.acpiquirks:
-                print(' - Checking ACPI/Quirks/{}... '.format(quirk), end='')
-                if quirk in self.config['ACPI']['Quirks']:
-                    if self.acpiquirkset[quirk] == self.config['ACPI']['Quirks'][quirk]:
-                        print(self.pgreen('OK'))
-                    else:
-                        print(self.pred('Error'))
-                        print(self.pred('   {} should be set to {}'.format(quirk, self.acpiquirkset[quirk])))
-                        self.error.append('{} should be set to {}'.format(quirk, self.acpiquirkset[quirk]))
-                else:
-                    print(self.pred('Error'))
-                    print(self.pred('   Missing {} in config.plist'.format(quirk)))
-                    self.error.append('Missing {} in config.plist'.format(quirk))
-                time.sleep(0.1)
-            time.sleep(0.5)
-            print(self.pgreen('Done'))
-        else:
-            print(self.pred('Skipping ACPI part because of missing ACPI in config.plist...'))
-            time.sleep(1)
-
-        print(self.pred('All errors: '), end='')
-        if self.error != []:
-            print('')
-            for n in self.error:
-                print(self.pred(' - {}'.format(n)))
-        else:
-            print(self.pgreen('None'))
+            time.sleep(0.05)
             
     def main(self):
         # Clear the window first
