@@ -102,13 +102,25 @@ class occhecker:
     def info(self):
         self.clear()
         # Let's start by adding a title
+        self.title('Checking if the current folder is OC folder...')
+        print('')
+        isOCfolder = True
+        for d in self.ocfolders:
+            if not os.path.isdir(d):
+                isOCfolder = False
+        for f in self.ocfiles:
+            if not os.path.isfile(f):
+                isOCfolder = False
+        time.sleep(0.05)
+        self.clear()
         self.title('Gathering information...')
         print('')
-        print('Please paste the path of the EFI folder: ', end='')
-        self.efiloc = input('').replace('\\', '')
-        if self.efiloc.endswith(' '):
-            self.efiloc = self.efiloc[:-1]
-        os.chdir(self.efiloc)
+        if isOCfolder == False:
+            print('Please paste the path of the EFI folder: ', end='')
+            self.efiloc = input('').replace('\\', '')
+            if self.efiloc.endswith(' '):
+                self.efiloc = self.efiloc[:-1]
+            os.chdir(self.efiloc)
         self.checkfiles()
 
     def checkfiles(self):
