@@ -4,11 +4,10 @@ class occhecker:
 
     def __init__(self):
         self.drivers = ['FwRuntimeServices.efi', 'ApfsDriverLoader.efi', 'HFSPlus.efi']
-        self.kexts = ['Lilu.kext', 'NullCPUPowerManagement.kext', 'WhateverGreen.kext']
+        self.kexts = ['Lilu.kext', 'WhateverGreen.kext']
         self.ocfiles = ['config.plist', 'OpenCore.efi']
         self.bootfiles = 'BOOTX64.efi'
         self.ocfolders = ['ACPI', 'Drivers', 'Kexts', 'Tools']
-        # self.config = ['ACPI', 'Booter', 'DeviceProperties', 'Kernel', 'Misc', 'NVRAM', 'PlatformInfo', 'UEFI']
         self.configstruc = {
             'ACPI': ['Add', 'Block', 'Patch', 'Quirks'],
             'Booter': ['Quirks'],
@@ -63,12 +62,27 @@ class occhecker:
                 'ProvideConsoleGop': True
             }
         }
+        self.folders = {
+            'ACPI': 'ACPI',
+            'Kernel': 'Kexts'
+        }
+        self.suffix = {
+            'ACPI': '.aml',
+            'Kernel': '.kext'
+        }
+        self.paths = {
+            'ACPI': 'Path',
+            'Kernel': 'BundlePath'
+        }
     
     def pred(self, string):
         return("\033[1;91m{}\033[00m" .format(string))
 
     def pgreen(self, string):
         return("\033[1;92m{}\033[00m" .format(string))
+
+    def pgray(self, string):
+        return("\033[1;90m{}\033[00m" .format(string))
 
     def clear(self):
         if os.name == 'nt':
@@ -243,56 +257,132 @@ class occhecker:
         time.sleep(0.5)
         print(self.pgreen('Done'))
         time.sleep(1)
-        self.checkadd()
+        self.checkaddpath()
     
     
 
-    def checkadd(self):
+    def checkaddpath(self):
         self.clear()
-        self.title('Checking Add...')
+        self.title('Checking Add Paths...')
         print('')
-        files = os.listdir('./ACPI')
-        if 'ACPI' in self.config:
-            print('')
-            print('Checking ACPI folder -> ACPI/Add...')
+        self.filtered_files = {}
+        for folder in self.folders:
+            files = os.listdir(self.folders[folder])
+            temp_array=[]
             for f in files:
-                if f.endswith('.aml') and not f.startswith('._'):
-                    b = False
-                    print(' - Checking {}... '.format(f),end='')
-                    for item in self.config['ACPI']['Add']:
-                        if item['Path'] == f:
-                            b = True
-                            if 'Enabled' in item:
-                                if item['Enabled'] == False:
-                                    print(self.pred('Error'))
-                                    print(self.pred('   Enabled is not set to True in ACPI/Add/{}'.format(f)))
-                                    self.error.append('Enabled is not set to True in ACPI/Add/{}'.format(f))
+                if f.endswith(self.suffix[folder]) and not f.startswith('._'):
+                    temp_array.append(f)
+            self.filtered_files[folder] = temp_array
+        for folder in self.folders:
+            if folder in self.config:
+                print('Checking {} folder -> {}/Add... '.format(self.folders[folder],folder),end='')
+                if self.filtered_files[folder] != []:
+                    print('')
+                    for f in self.filtered_files[folder]:
+                        b = False
+                        print(' - Checking {}... '.format(f),end='')
+                        for item in self.config[folder]['Add']:
+                            if item[self.paths[folder]] == f:
+                                b = True
+                                if 'Enabled' in item:
+                                    if item['Enabled'] == False:
+                                        print(self.pred('Error'))
+                                        print(self.pred('   Enabled is not set to True in {}/Add/{}'.format(folder,f)))
+                                        self.error.append('Enabled is not set to True in {}/Add/{}'.format(folder,f))
+                                    else:
+                                        print(self.pgreen('OK'))
                                 else:
-                                    print(self.pgreen('OK'))
-                            else:
+                                    print(self.pred('Error'))
+                                    print(self.pred('    Enabled is not set in {}/Add/{}'.format(folder,f)))
+                                    self.error.append('Enabled is not set in {}/Add/{}'.format(folder,f))
+                                break
+                        if b == False:
+                            print(self.pred('Error'))
+                            print(self.pred('   Missing {} in {}/Add'.format(folder,f)))
+                            self.error.append('Missing {} in {}/Add'.format(folder,f))
+                        time.sleep(0.05)
+                else:
+                    print(self.pgray('Skipped'))
+                    time.sleep(0.05)
+                print('Checking {}/Add -> {} folder... '.format(folder,self.folders[folder]), end='')
+                if self.config[folder]['Add'] != []:
+                    print('')
+                    for item in self.config[folder]['Add']:
+                        if item['Enabled'] == True:
+                            print(' - Checking {}... '.format(item[self.paths[folder]]), end='')
+                            if item[self.paths[folder]] not in self.filtered_files[folder]:
                                 print(self.pred('Error'))
-                                print(self.pred('    Enabled is not set in ACPI/Add/{}'.format(f)))
-                                self.error.append('Enabled is not set in ACPI/Add/{}'.format(f))
-                            break
-                    if b == False:
-                        print(self.pred('Error'))
-                        print(self.pred('   Missing {} in ACPI/Add'.format(f)))
-                        self.error.append('Missing {} in ACPI/Add'.format(f))
+                                print(self.pred("   Enabled {} in config.plist which doesn't exist".format(item[self.paths[folder]])))
+                                self.error.append("Enabled {} in config.plist which doesn't exist".format(item[self.paths[folder]]))
+                            else:
+                                print(self.pgreen('OK'))
+                        time.sleep(0.05)
+                else:
+                    print(self.pgray('Skipped'))
+                    time.sleep(0.05)
+            else:
+                print('Skipping {}/Add because of missing ACPI in config.plist'.format(folder))
                 time.sleep(0.05)
-            print('Checking ACPI/Add -> ACPI folder...')
-            for item in self.config['ACPI']['Add']:
-                if item['Enabled'] == True:
-                    print(' - Checking {}...'.format(item['Path']), end='')
-                    if item['Path'] not in files:
-                        print(self.pred('Error'))
-                        print(self.pred("   Enabled {} in config.plist which doesn't exists".format(item['Path'])))
-                        self.error.append("Enabled {} in config.plist which doesn't exists".format(item['Path']))
-                    else:
-                        print(self.pgreen('OK'))
-        else:
-            print('Skipping ACPI/Add because of missing ACPI in config.plist')
-            time.sleep(0.05)
         time.sleep(0.5)
+        print(self.pgreen('Done'))
+        time.sleep(1)
+        self.checkkextexec()
+
+    def checkkextexec(self):
+        self.clear()
+        self.title('Checking ExecutablePath in Kernel/Add...')
+        print('')
+        print('Checking Kernel/Add -> Kexts folder... ',end='')
+        os.chdir('./Kexts')
+        kexts = self.filtered_files['Kernel']
+        if self.config['Kernel']['Add'] != []:
+            print('')
+            for item in self.config['Kernel']['Add']:
+                print(' - Checking {}... '.format(item['BundlePath']), end='')
+                if 'ExecutablePath' in item:
+                    kextbundle = item['BundlePath']
+                    kextexec = item['ExecutablePath']
+                    if kextexec != '':
+                        if os.path.isfile('{}/{}'.format(kextbundle,kextexec)):
+                            print(self.pgreen('OK'))
+                        else:
+                            print(self.pred('Error'))
+                            print(self.pred("   ExecutablePath under {} is set which doesn't exist".format(kextbundle)))
+                            self.error.append("ExecutablePath under {} is set which doesn't exist".format(kextbundle))
+                    else:
+                        print(self.pgray('Skipped'))
+                else:
+                    print(self.pgray('Skipped'))
+                time.sleep(0.05)
+        else:
+            print(self.pgray('Skipped'))
+        print('Checking Kexts folder -> Kernel/Add... ',end='')
+        if kexts != []:
+            print('')
+            for kext in kexts:
+                print(' - Checking {}... '.format(kext), end='')
+                kextbundle = kext
+                kextexec = 'Contents/MacOS/{}'.format(kext[:-5])
+                if os.path.isfile('{}/{}'.format(kextbundle,kextexec)):
+                    b = False
+                    for item in self.config['Kernel']['Add']:
+                        if kextexec == item['ExecutablePath'] and kextbundle == item['BundlePath']:
+                            b = True
+                            break
+                    if b == True:
+                        print(self.pgreen('OK'))
+                    else:
+                        print(self.pred('Error'))
+                        print(self.pred('   {} has an executable file but not set in config.plist'.format(kextbundle)))
+                        self.error.append('{} has an executable file but not set in config.plist'.format(kextbundle))
+                else:
+                    print(self.pgray('Skipped'))
+                time.sleep(0.05)
+        else:
+            print(self.pgray('Skipped'))
+        time.sleep(0.5)
+        print(self.pgreen('Done'))
+        time.sleep(1)
         self.printerror()
             
     def printerror(self):
@@ -307,6 +397,7 @@ class occhecker:
                 print(self.pred(' - {}'.format(n)))
         else:
             print(self.pgreen('None'))
+        print('')
 
     def main(self):
         # Clear the window first
