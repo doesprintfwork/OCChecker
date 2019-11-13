@@ -122,6 +122,8 @@ class occhecker:
             if self.efiloc.endswith(' '):
                 self.efiloc = self.efiloc[:-1]
             os.chdir(self.efiloc)
+        else:
+            os.chdir('../')
         self.checkfiles()
 
     def checkfiles(self):
