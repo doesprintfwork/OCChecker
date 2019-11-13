@@ -329,63 +329,67 @@ class occhecker:
         time.sleep(0.5)
         print(self.pgreen('Done'))
         time.sleep(1)
-        self.checkkextexec()
+        self.checkkext()
 
-    def checkkextexec(self):
+    def checkkext(self):
+        checklist = ['ExecutablePath', 'PlistPath']
         self.clear()
-        self.title('Checking ExecutablePath in Kernel/Add...')
-        print('')
-        print('Checking Kernel/Add -> Kexts folder... ',end='')
-        os.chdir('./Kexts')
-        kexts = self.filtered_files['Kernel']
-        if self.config['Kernel']['Add'] != []:
+        for check in checklist:
+            self.title('Checking {} in Kernel/Add...'.format(check))
             print('')
-            for item in self.config['Kernel']['Add']:
-                print(' - Checking {}... '.format(item['BundlePath']), end='')
-                if 'ExecutablePath' in item:
-                    kextbundle = item['BundlePath']
-                    kextexec = item['ExecutablePath']
-                    if kextexec != '':
-                        if os.path.exists('{}/{}'.format(kextbundle,kextexec)):
+            print('Checking Kernel/Add -> Kexts folder... ',end='')
+            os.chdir('./Kexts')
+            kexts = self.filtered_files['Kernel']
+            if self.config['Kernel']['Add'] != []:
+                print('')
+                for item in self.config['Kernel']['Add']:
+                    print(' - Checking {}... '.format(item['BundlePath']), end='')
+                    if check in item:
+                        kextbundle = item['BundlePath']
+                        kextcheck = item[check]
+                        if kextcheck != '':
+                            if os.path.isfile('{}/{}'.format(kextbundle,kextcheck)):
+                                print(self.pgreen('OK'))
+                            else:
+                                print(self.pred('Error'))
+                                print(self.pred("   {} under {} is set which doesn't exist".format(check,kextbundle)))
+                                self.error.append("{} under {} is set which doesn't exist".format(check,kextbundle))
+                        else:
+                            print(self.pgray('Skipped'))
+                    else:
+                        print(self.pgray('Skipped'))
+                    time.sleep(0.05)
+            else:
+                print(self.pgray('Skipped'))
+            print('Checking Kexts folder -> Kernel/Add... ',end='')
+            if kexts != []:
+                print('')
+                for kext in kexts:
+                    print(' - Checking {}... '.format(kext), end='')
+                    kextbundle = kext
+                    kextcheck = 'Contents/MacOS/{}'.format(kext[:-5]) if check == 'ExecutablePath' else 'Contents/Info.plist'
+                    if os.path.isfile('{}/{}'.format(kextbundle,kextcheck)):
+                        b = False
+                        for item in self.config['Kernel']['Add']:
+                            if kextcheck == item[check] and kextbundle == item['BundlePath']:
+                                b = True
+                                break
+                        if b == True:
                             print(self.pgreen('OK'))
                         else:
                             print(self.pred('Error'))
-                            print(self.pred("   ExecutablePath under {} is set which doesn't exist".format(kextbundle)))
-                            self.error.append("ExecutablePath under {} is set which doesn't exist".format(kextbundle))
+                            print(self.pred('   {} has an {} but not set in config.plist'.format(kextbundle, 'executable file' if check == 'ExecutablePath' else 'info.plist')))
+                            self.error.append('{} has an {} but not set in config.plist'.format(kextbundle, 'executable file' if check == 'ExecutablePath' else 'info.plist'))
                     else:
                         print(self.pgray('Skipped'))
-                else:
-                    print(self.pgray('Skipped'))
-                time.sleep(0.05)
-        else:
-            print(self.pgray('Skipped'))
-        print('Checking Kexts folder -> Kernel/Add... ',end='')
-        if kexts != []:
-            print('')
-            for kext in kexts:
-                print(' - Checking {}... '.format(kext), end='')
-                kextbundle = kext
-                kextexec = 'Contents/MacOS/{}'.format(kext[:-5])
-                if os.path.exists('{}/{}'.format(kextbundle,kextexec)):
-                    b = False
-                    for item in self.config['Kernel']['Add']:
-                        if kextexec == item['ExecutablePath'] and kextbundle == item['BundlePath']:
-                            b = True
-                            break
-                    if b == True:
-                        print(self.pgreen('OK'))
-                    else:
-                        print(self.pred('Error'))
-                        print(self.pred('   {} has an executable file but not set in config.plist'.format(kextbundle)))
-                        self.error.append('{} has an executable file but not set in config.plist'.format(kextbundle))
-                else:
-                    print(self.pgray('Skipped'))
-                time.sleep(0.05)
-        else:
-            print(self.pgray('Skipped'))
-        time.sleep(0.5)
-        print(self.pgreen('Done'))
-        time.sleep(1)
+                    time.sleep(0.05)
+            else:
+                print(self.pgray('Skipped'))
+            time.sleep(0.5)
+            print(self.pgreen('Done'))
+            time.sleep(1)
+            os.chdir('../')
+            self.clear()
         self.printerror()
             
     def printerror(self):
