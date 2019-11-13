@@ -104,6 +104,7 @@ class occhecker:
         # Let's start by adding a title
         self.title('Checking if the current folder is OC folder...')
         print('')
+        os.chdir(os.path.dirname(os.path.realpath(__file__)))
         isOCfolder = True
         for d in self.ocfolders:
             if not os.path.isdir(d):
