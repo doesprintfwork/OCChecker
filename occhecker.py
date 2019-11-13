@@ -4,7 +4,7 @@ class occhecker:
 
     def __init__(self):
         self.drivers = ['FwRuntimeServices.efi', 'ApfsDriverLoader.efi', 'HFSPlus.efi']
-        self.kexts = ['Lilu.kext', 'WhateverGreen.kext']
+        self.kexts = ['Lilu.kext', 'WhateverGreen.kext', 'NullCPUPowerManagement.kext']
         self.ocfiles = ['config.plist', 'OpenCore.efi']
         self.bootfiles = 'BOOTX64.efi'
         self.ocfolders = ['ACPI', 'Drivers', 'Kexts', 'Tools']
