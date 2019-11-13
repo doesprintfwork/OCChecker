@@ -422,5 +422,4 @@ class occhecker:
         
 
 if __name__ == "__main__":
-    r = occhecker()
-    r.main()
+    occhecker().main()
