@@ -5,9 +5,8 @@ class occhecker:
     def __init__(self):
         self.drivers = ['FwRuntimeServices.efi', 'ApfsDriverLoader.efi', 'HFSPlus.efi']
         self.kexts = ['Lilu.kext', 'WhateverGreen.kext', 'NullCPUPowerManagement.kext']
-        self.ocfiles = ['config.plist', 'OpenCore.efi']
         self.bootfiles = 'BOOTX64.efi'
-        self.ocfolders = ['ACPI', 'Drivers', 'Kexts', 'Tools']
+        self.ocfolder = ['ACPI', 'Drivers', 'Kexts', 'Tools', 'config.plist', 'OpenCore.efi']
         self.configstruc = {
             'ACPI': ['Add', 'Block', 'Patch', 'Quirks'],
             'Booter': ['Quirks'],
@@ -106,11 +105,8 @@ class occhecker:
         print('')
         os.chdir(os.path.dirname(os.path.realpath(__file__)))
         isOCfolder = True
-        for d in self.ocfolders:
-            if not os.path.isdir(d):
-                isOCfolder = False
-        for f in self.ocfiles:
-            if not os.path.isfile(f):
+        for d in self.ocfolder:
+            if not os.path.exists(d):
                 isOCfolder = False
         time.sleep(0.05)
         self.clear()
@@ -136,7 +132,7 @@ class occhecker:
         # Check folder structure
         print('')
         print('Checking root folder structure... ', end='')
-        if os.path.isdir('./BOOT') and os.path.isdir('./OC'):
+        if os.path.exists('./BOOT') and os.path.exists('./OC'):
             print(self.pgreen('OK'))
         else:
             print(self.pred('Error'))
@@ -149,7 +145,7 @@ class occhecker:
         time.sleep(0.05)
 
         print('Checking BOOT folder... ', end='')
-        if os.path.isfile('./BOOT/BOOTX64.efi'):
+        if os.path.exists('./BOOT/BOOTX64.efi'):
             print(self.pgreen('OK'))
         else:
             self.missing(self.pred('BOOTX64.efi'))
@@ -157,18 +153,10 @@ class occhecker:
 
         print('Checking OC folder...')
         os.chdir('./OC')
-        for d in self.ocfolders:
+        for d in self.ocfolder:
             print(' - {}... '.format(d),end='')
-            if not os.path.isdir(d):
+            if not os.path.exists(d):
                 self.missing(self.pred(d))
-                input('Press any key to exit...')
-                sys.exit()
-            print(self.pgreen('OK'))
-            time.sleep(0.05)
-        for f in self.ocfiles:
-            print(' - {}... '.format(f),end='')
-            if not os.path.isfile(f):
-                self.missing(self.pred(f))
                 input('Press any key to exit...')
                 sys.exit()
             print(self.pgreen('OK'))
@@ -179,12 +167,12 @@ class occhecker:
         os.chdir('./Kexts')
         for k in self.kexts:
             print(' - {}... '.format(k),end='')
-            if not os.path.isdir(k):
+            if not os.path.exists(k):
                 self.missing(self.pred(k))
             print(self.pgreen('OK'))
             time.sleep(0.05)
         print(' - {}... '.format('FakeSMC.kext or VirtualSMC.kext'),end='')
-        if not (os.path.isdir('FakeSMC.kext') or os.path.isdir('VirtualSMC.kext')):
+        if not (os.path.exists('FakeSMC.kext') or os.path.exists('VirtualSMC.kext')):
             self.missing(self.pred('FakeSMC.kext or VirtualSMC.kext'))
             self.error.append('Missing FakeSMC.kext or VirtualSMC.kext in Kexts folder')
         else:
@@ -195,7 +183,7 @@ class occhecker:
         os.chdir('../Drivers')
         for d in self.drivers:
             print(' - {}... '.format(d), end='')
-            if not os.path.isfile(d):
+            if not os.path.exists(d):
                 self.missing(self.pred(d))
                 self.error.append('Missing {} in Drivers folder'.format(d))
             else:
@@ -358,7 +346,7 @@ class occhecker:
                     kextbundle = item['BundlePath']
                     kextexec = item['ExecutablePath']
                     if kextexec != '':
-                        if os.path.isfile('{}/{}'.format(kextbundle,kextexec)):
+                        if os.path.exists('{}/{}'.format(kextbundle,kextexec)):
                             print(self.pgreen('OK'))
                         else:
                             print(self.pred('Error'))
@@ -378,7 +366,7 @@ class occhecker:
                 print(' - Checking {}... '.format(kext), end='')
                 kextbundle = kext
                 kextexec = 'Contents/MacOS/{}'.format(kext[:-5])
-                if os.path.isfile('{}/{}'.format(kextbundle,kextexec)):
+                if os.path.exists('{}/{}'.format(kextbundle,kextexec)):
                     b = False
                     for item in self.config['Kernel']['Add']:
                         if kextexec == item['ExecutablePath'] and kextbundle == item['BundlePath']:
