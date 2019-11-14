@@ -61,6 +61,41 @@ class occhecker:
                 'ProvideConsoleGop': True
             }
         }
+        self.others = {
+            'Kernel': {
+                'Emulate':{}
+            },
+            'Misc': {
+                'Boot': {
+                    'HibernateMode': 'None',
+                    'HideSelf': True,
+                    'UsePicker': True
+                },
+                'Debug': {
+                    'DisableWatchDog': True
+                },
+                'Security': {
+                    'RequireSignature': False,
+                    'RequireVault': False,
+                    'ScanPolicy': 0
+                }
+            },
+            'NVRAM': {
+                '7C436110-AB2A-4BBB-A880-FE41995C9F82': {
+                    'csr-active-config': b'\xe7\x03\x00\x00'
+                }
+            },
+            'PlatformInfo': {
+                'Automatic': True,
+                'UpdateDataHub': True,
+                'UpdateNVRAM': True,
+                'UpdateSMBIOS': True,
+                'UpdateSMBIOSMode': 'Create'
+            },
+            'UEFI': {
+                'ConnectDrivers': True
+            }
+        }
         self.folders = {
             'ACPI': 'ACPI',
             'Kernel': 'Kexts'
@@ -112,7 +147,7 @@ class occhecker:
         self.clear()
         self.title('Gathering information...')
         print('')
-        if isOCfolder == False:
+        if not isOCfolder:
             print('Please paste the path of the EFI folder: ', end='')
             self.efiloc = input('').replace('\\', '')
             if self.efiloc.endswith(' '):
@@ -261,8 +296,6 @@ class occhecker:
         print(self.pgreen('Done'))
         time.sleep(1)
         self.checkaddpath()
-    
-    
 
     def checkaddpath(self):
         self.clear()
@@ -288,7 +321,7 @@ class occhecker:
                             if item[self.paths[folder]] == f:
                                 b = True
                                 if 'Enabled' in item:
-                                    if item['Enabled'] == False:
+                                    if not item['Enabled']:
                                         print(self.pred('Error'))
                                         print(self.pred('   Enabled is not set to True in {}/Add/{}'.format(folder,f)))
                                         self.error.append('Enabled is not set to True in {}/Add/{}'.format(folder,f))
@@ -299,7 +332,7 @@ class occhecker:
                                     print(self.pred('    Enabled is not set in {}/Add/{}'.format(folder,f)))
                                     self.error.append('Enabled is not set in {}/Add/{}'.format(folder,f))
                                 break
-                        if b == False:
+                        if not b:
                             print(self.pred('Error'))
                             print(self.pred('   Missing {} in {}/Add'.format(folder,f)))
                             self.error.append('Missing {} in {}/Add'.format(folder,f))
@@ -311,7 +344,7 @@ class occhecker:
                 if self.config[folder]['Add'] != []:
                     print('')
                     for item in self.config[folder]['Add']:
-                        if item['Enabled'] == True:
+                        if item['Enabled']:
                             print(' - Checking {}... '.format(item[self.paths[folder]]), end='')
                             if item[self.paths[folder]] not in self.filtered_files[folder]:
                                 print(self.pred('Error'))
@@ -374,7 +407,7 @@ class occhecker:
                             if kextcheck == item[check] and kextbundle == item['BundlePath']:
                                 b = True
                                 break
-                        if b == True:
+                        if b:
                             print(self.pgreen('OK'))
                         else:
                             print(self.pred('Error'))
@@ -390,6 +423,44 @@ class occhecker:
             time.sleep(1)
             os.chdir('../')
             self.clear()
+        self.checktools()
+
+    def checktools(self):
+        self.clear()
+        self.title('Checking Tools...')
+        print('')
+        time.sleep(0.05)
+        unfiltered_tools = os.listdir('Tools')
+        tools = []
+        for tool in unfiltered_tools:
+            if tool.endswith('.efi') and not tool.startswith('._'):
+                tools.append(tool)
+        print('Checking Misc/Tools -> Tools... ',end='')
+        if self.config['Misc']['Tools'] != []:
+            print('')
+            for tool in self.config['Misc']['Tools']:
+                print(' - Checking {}... '.format(tool['Path']), end='')
+                path = tool['Path']
+                if os.path.exists('./Tools/{}'.format(path)) and tool['Enabled']:
+                    print(self.pgreen('OK'))
+                else:
+                    print(self.pred('Error'))
+                    print(self.pred("   Enabled {} which doesn't exists in Tools".format(path)))
+                    self.error.append("Enabled {} which doesn't exists in Tools".format(path))
+                time.sleep(0.05)
+        else:
+            print(self.pgray('Skipped'))
+            time.sleep(0.05)
+        print('Checking Tools -> Misc/Tools... ',end='')
+        if tools != []:
+            print('')
+            for tool in tools:
+                print(' - Checking {}... '.format(tool))
+                for item in self.config['Misc']['Tools']:
+                    pass
+        else:
+            print('Skipped')
+
         self.printerror()
             
     def printerror(self):
