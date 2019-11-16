@@ -262,8 +262,8 @@ class occhecker:
                         print(self.pgreen('OK'))
                     else:
                         print(self.pred('Error'))
-                        print(self.pred('Missing {}/{} in config.plist'.format(p,x)))
-                        self.error.append('Missing {}/{} in config.plist'.format(p,x))
+                        print(self.pred('Missing {} -> {} in config.plist'.format(p,x)))
+                        self.error.append('Missing {} -> {} in config.plist'.format(p,x))
                     time.sleep(0.05)
             else:
                 print(self.pgray('Skipped because of missing {}'.format(p)))
@@ -286,12 +286,12 @@ class occhecker:
                             print(self.pgreen('OK'))
                         else:
                             print(self.pred('Error'))
-                            print(self.pred('   {}/Quirks/{} should be set to {}'.format(q,quirk, self.quirks[q][quirk])))
-                            self.error.append('{}/Quirks/{} should be set to {}'.format(q,quirk, self.quirks[q][quirk]))
+                            print(self.pred('   {} > Quirks > {} should be set to {}'.format(q,quirk, self.quirks[q][quirk])))
+                            self.error.append('{} > Quirks > {} should be set to {}'.format(q,quirk, self.quirks[q][quirk]))
                     else:
                         print(self.pred('Error'))
-                        print(self.pred('   Missing {}/Quirks/{} in config.plist'.format(q,quirk)))
-                        self.error.append('Missing {}/Quirks/{} in config.plist'.format(q,quirk))
+                        print(self.pred('   Missing {} > Quirks > {} in config.plist'.format(q,quirk)))
+                        self.error.append('Missing {} > Quirks > {} in config.plist'.format(q,quirk))
                     time.sleep(0.05)
             else:
                 print(self.pgray('Skipping {} part because of missing {} in config.plist...'.format(q,q)))
@@ -326,19 +326,19 @@ class occhecker:
                                 if 'Enabled' in item:
                                     if not item['Enabled']:
                                         print(self.pred('Error'))
-                                        print(self.pred('   Enabled is not set to True in {}/Add/{}'.format(folder,f)))
-                                        self.error.append('Enabled is not set to True in {}/Add/{}'.format(folder,f))
+                                        print(self.pred('   Enabled is not set to True in {} > Add > {}'.format(folder,f)))
+                                        self.error.append('Enabled is not set to True in {} > Add > {}'.format(folder,f))
                                     else:
                                         print(self.pgreen('OK'))
                                 else:
                                     print(self.pred('Error'))
-                                    print(self.pred('    Enabled is not set in {}/Add/{}'.format(folder,f)))
-                                    self.error.append('Enabled is not set in {}/Add/{}'.format(folder,f))
+                                    print(self.pred('    Enabled is not set in {} > Add > {}'.format(folder,f)))
+                                    self.error.append('Enabled is not set in {} > Add > {}'.format(folder,f))
                                 break
                         if not b:
                             print(self.pred('Error'))
-                            print(self.pred('   Missing {} in {}/Add'.format(folder,f)))
-                            self.error.append('Missing {} in {}/Add'.format(folder,f))
+                            print(self.pred('   Missing {} in {} > Add'.format(folder,f)))
+                            self.error.append('Missing {} in {} > Add'.format(folder,f))
                         time.sleep(0.05)
                 else:
                     print(self.pgray('Skipped'))
@@ -360,7 +360,7 @@ class occhecker:
                     print(self.pgray('Skipped'))
                     time.sleep(0.05)
             else:
-                print(self.pgray('Skipping {}/Add because of missing ACPI in config.plist'.format(folder)))
+                print(self.pgray('Skipping {}/Add because of missing {} in config.plist'.format(folder,folder)))
                 time.sleep(0.05)
         time.sleep(0.5)
         print(self.pgreen('Done'))
