@@ -123,10 +123,6 @@ class occhecker:
             os.system('cls')
         else:
             os.system('clear')
-    
-    def missing(self,s):
-        print(self.pred('Error'))
-        print(self.pred('Missing {}'.format(s)))
 
     def title(self, t):
         print('-'*50)
@@ -173,7 +169,7 @@ class occhecker:
             print(self.pred('Error'))
             print('')
             print(self.pred('Wrong folder structure!'))
-            print(self.pred('Probably missing a folder'))
+            print(self.pred('Missing a folder'))
             print('')
             input('Press any key to exit... ')
             sys.exit()
@@ -183,7 +179,9 @@ class occhecker:
         if os.path.exists('./BOOT/BOOTX64.efi'):
             print(self.pgreen('OK'))
         else:
-            self.missing(self.pred('BOOTX64.efi'))
+            print(self.pred('Error'))
+            print(self.pred('   Missing BOOTX64.efi'))
+            self.error.append('Missing BOOTX64.efi')
         time.sleep(0.05)
 
         print('Checking OC folder...')
@@ -191,7 +189,8 @@ class occhecker:
         for d in self.ocfolder:
             print(' - {}... '.format(d),end='')
             if not os.path.exists(d):
-                self.missing(self.pred(d))
+                print(self.pred('Error'))
+                print(self.pred('Missing {}'.format(d)))
                 input('Press any key to exit...')
                 sys.exit()
             print(self.pgreen('OK'))
@@ -202,36 +201,41 @@ class occhecker:
         os.chdir('./Kexts')
         for k in self.kexts:
             print(' - {}... '.format(k),end='')
-            if not os.path.exists(k):
-                self.missing(self.pred(k))
-            print(self.pgreen('OK'))
+            if os.path.exists(k):
+                print(self.pgreen('OK'))
+            else:
+                print(self.pred('Error'))
+                print(self.pred('Missing {}'.format(k)))
+                self.error.append('Missing {}'.format(k))
             time.sleep(0.05)
         print(' - {}... '.format('FakeSMC.kext or VirtualSMC.kext'),end='')
-        if not (os.path.exists('FakeSMC.kext') or os.path.exists('VirtualSMC.kext')):
-            self.missing(self.pred('FakeSMC.kext or VirtualSMC.kext'))
-            self.error.append('Missing FakeSMC.kext or VirtualSMC.kext in Kexts folder')
-        else:
+        if os.path.exists('FakeSMC.kext') or os.path.exists('VirtualSMC.kext'):
             print(self.pgreen('OK'))
+        else:
+            print(self.pred('Error'))
+            print(self.pred('   Missing FakeSMC.kext or VirtualSMC.kext'))
+            self.error.append('Missing FakeSMC.kext or VirtualSMC.kext in Kexts folder')
         time.sleep(0.05)
 
         print('Checking needed drivers in Drivers folder...')
         os.chdir('../Drivers')
         for d in self.drivers:
             print(' - {}... '.format(d), end='')
-            if not os.path.exists(d):
-                self.missing(self.pred(d))
-                self.error.append('Missing {} in Drivers folder'.format(d))
-            else:
+            if os.path.exists(d):
                 print(self.pgreen('OK'))
+            else:
+                print(self.pred('Error'))
+                print(self.pred('   Missing {}'.format(d)))
+                self.error.append('Missing {} in Drivers folder'.format(d))
             time.sleep(0.05)
         time.sleep(0.5)
         print(self.pgreen('Done'))
         time.sleep(1)
+        os.chdir('../')
         self.checkpliststc()
 
     def checkpliststc(self):
         self.clear()
-        os.chdir('../')
         self.title('Checking config.plist structure...')
         print('')
         print('Loading config.plist... ', end='')
@@ -243,11 +247,12 @@ class occhecker:
         print('Checking root config structure...')
         for x in self.configstruc:
             print(' - {}... '.format(x),end='')
-            if not x in self.config:
-                self.missing(self.pred('{} in config.plist'.format(x)))
-                self.error.append('Missing {} in config.plist'.format(x))
-            else:
+            if x in self.config:
                 print(self.pgreen('OK'))
+            else:
+                print(self.pred('Error'))
+                print(self.pred('   Missing {} in config.plist'.format(x)))
+                self.error.append('Missing {} in config.plist'.format(x))
             time.sleep(0.05)
 
         for p in self.configstruc:
@@ -255,13 +260,15 @@ class occhecker:
             if p in self.config:
                 for x in self.configstruc[p]:
                     print(' - {}/{}... '.format(p,x),end='')
-                    if not x in self.config[p]:
-                        self.missing(self.pred('{}/{} in config.plist'.format(p,x)))
+                    if x in self.config[p]:
+                        print(self.pgreen('OK'))
+                    else:
+                        print(self.pred('Error'))
+                        print(self.pred('Missing {}/{} in config.plist'.format(p,x)))
                         self.error.append('Missing {}/{} in config.plist'.format(p,x))
-                    print(self.pgreen('OK'))
                     time.sleep(0.05)
             else:
-                print(self.pred('Skipped because of missing {}'.format(p)))
+                print(self.pgray('Skipped because of missing {}'.format(p)))
                 time.sleep(0.05)
         time.sleep(0.5)
         print(self.pgreen('Done'))
@@ -290,7 +297,7 @@ class occhecker:
                         self.error.append('Missing {}/Quirks/{} in config.plist'.format(q,quirk))
                     time.sleep(0.05)
             else:
-                print(self.pred('Skipping {} part because of missing ACPI in config.plist...'.format(q)))
+                print(self.pgray('Skipping {} part because of missing {} in config.plist...'.format(q,q)))
                 time.sleep(0.05)
         time.sleep(0.5)
         print(self.pgreen('Done'))
@@ -357,67 +364,70 @@ class occhecker:
                     print(self.pgray('Skipped'))
                     time.sleep(0.05)
             else:
-                print('Skipping {}/Add because of missing ACPI in config.plist'.format(folder))
+                print(self.pgray('Skipping {}/Add because of missing ACPI in config.plist'.format(folder)))
                 time.sleep(0.05)
         time.sleep(0.5)
         print(self.pgreen('Done'))
         time.sleep(1)
-        self.checkkext()
+        self.checkkernel()
 
-    def checkkext(self):
+    def checkkernel(self):
         checklist = ['ExecutablePath', 'PlistPath']
         self.clear()
         for check in checklist:
             self.title('Checking {} in Kernel/Add...'.format(check))
             print('')
-            print('Checking Kernel/Add -> Kexts folder... ',end='')
             os.chdir('./Kexts')
             kexts = self.filtered_files['Kernel']
-            if self.config['Kernel']['Add'] != []:
-                print('')
-                for item in self.config['Kernel']['Add']:
-                    print(' - Checking {}... '.format(item['BundlePath']), end='')
-                    if check in item:
-                        kextbundle = item['BundlePath']
-                        kextcheck = item[check]
-                        if kextcheck != '':
-                            if os.path.isfile('{}/{}'.format(kextbundle,kextcheck)):
+            if 'Kernel' in self.config:
+                print('Checking Kernel/Add -> Kexts folder... ',end='')
+                if self.config['Kernel']['Add'] != []:
+                    print('')
+                    for item in self.config['Kernel']['Add']:
+                        print(' - Checking {}... '.format(item['BundlePath']), end='')
+                        if check in item:
+                            kextbundle = item['BundlePath']
+                            kextcheck = item[check]
+                            if kextcheck != '':
+                                if os.path.isfile('{}/{}'.format(kextbundle,kextcheck)):
+                                    print(self.pgreen('OK'))
+                                else:
+                                    print(self.pred('Error'))
+                                    print(self.pred("   {} under {} is set which doesn't exist".format(check,kextbundle)))
+                                    self.error.append("{} under {} is set which doesn't exist".format(check,kextbundle))
+                            else:
+                                print(self.pgray('Skipped'))
+                        else:
+                            print(self.pgray('Skipped'))
+                        time.sleep(0.05)
+                else:
+                    print(self.pgray('Skipped'))
+                print('Checking Kexts folder -> Kernel/Add... ',end='')
+                if kexts != []:
+                    print('')
+                    for kext in kexts:
+                        print(' - Checking {}... '.format(kext), end='')
+                        kextbundle = kext
+                        kextcheck = 'Contents/MacOS/{}'.format(kext[:-5]) if check == 'ExecutablePath' else 'Contents/Info.plist'
+                        if os.path.isfile('{}/{}'.format(kextbundle,kextcheck)):
+                            b = False
+                            for item in self.config['Kernel']['Add']:
+                                if kextcheck == item[check] and kextbundle == item['BundlePath']:
+                                    b = True
+                                    break
+                            if b:
                                 print(self.pgreen('OK'))
                             else:
                                 print(self.pred('Error'))
-                                print(self.pred("   {} under {} is set which doesn't exist".format(check,kextbundle)))
-                                self.error.append("{} under {} is set which doesn't exist".format(check,kextbundle))
+                                print(self.pred('   {} has an {} but not set in config.plist'.format(kextbundle, 'executable file' if check == 'ExecutablePath' else 'info.plist')))
+                                self.error.append('{} has an {} but not set in config.plist'.format(kextbundle, 'executable file' if check == 'ExecutablePath' else 'info.plist'))
                         else:
                             print(self.pgray('Skipped'))
-                    else:
-                        print(self.pgray('Skipped'))
-                    time.sleep(0.05)
+                        time.sleep(0.05)
+                else:
+                    print(self.pgray('Skipped'))
             else:
-                print(self.pgray('Skipped'))
-            print('Checking Kexts folder -> Kernel/Add... ',end='')
-            if kexts != []:
-                print('')
-                for kext in kexts:
-                    print(' - Checking {}... '.format(kext), end='')
-                    kextbundle = kext
-                    kextcheck = 'Contents/MacOS/{}'.format(kext[:-5]) if check == 'ExecutablePath' else 'Contents/Info.plist'
-                    if os.path.isfile('{}/{}'.format(kextbundle,kextcheck)):
-                        b = False
-                        for item in self.config['Kernel']['Add']:
-                            if kextcheck == item[check] and kextbundle == item['BundlePath']:
-                                b = True
-                                break
-                        if b:
-                            print(self.pgreen('OK'))
-                        else:
-                            print(self.pred('Error'))
-                            print(self.pred('   {} has an {} but not set in config.plist'.format(kextbundle, 'executable file' if check == 'ExecutablePath' else 'info.plist')))
-                            self.error.append('{} has an {} but not set in config.plist'.format(kextbundle, 'executable file' if check == 'ExecutablePath' else 'info.plist'))
-                    else:
-                        print(self.pgray('Skipped'))
-                    time.sleep(0.05)
-            else:
-                print(self.pgray('Skipped'))
+                print(self.pgray('Skipped because of missing Kernel in config.plist'))
             time.sleep(0.5)
             print(self.pgreen('Done'))
             time.sleep(1)
@@ -435,32 +445,60 @@ class occhecker:
         for tool in unfiltered_tools:
             if tool.endswith('.efi') and not tool.startswith('._'):
                 tools.append(tool)
-        print('Checking Misc/Tools -> Tools... ',end='')
-        if self.config['Misc']['Tools'] != []:
-            print('')
-            for tool in self.config['Misc']['Tools']:
-                print(' - Checking {}... '.format(tool['Path']), end='')
-                path = tool['Path']
-                if os.path.exists('./Tools/{}'.format(path)) and tool['Enabled']:
-                    print(self.pgreen('OK'))
-                else:
-                    print(self.pred('Error'))
-                    print(self.pred("   Enabled {} which doesn't exists in Tools".format(path)))
-                    self.error.append("Enabled {} which doesn't exists in Tools".format(path))
+        if 'Misc' in self.config:
+            print('Checking Misc/Tools -> Tools... ',end='')
+            if self.config['Misc']['Tools'] != []:
+                print('')
+                n = 0
+                for tool in self.config['Misc']['Tools']:
+                    print(' - Checking {}... '.format(tool['Path']), end='')
+                    if 'Path' in tool and 'Enabled' in tool:
+                        path = tool['Path']
+                        if os.path.exists('./Tools/{}'.format(path)):
+                            if tool['Enabled']:
+                                print(self.pgreen('OK'))
+                            else:
+                                print(self.pred('Error'))
+                                print(self.pred('   Disabled {} which exists in Tools'.format(path)))
+                                self.error.append('Disabled {} which exists in Tools'.format(path))
+                        elif tool['Enabled']:
+                            print(self.pred('Error'))
+                            print(self.pred("   Enabled {} which doesn't exist in Tools".format(path)))
+                            self.error.append("Enabled {} which doesn't exist in Tools".format(path))
+                        else:
+                            print(self.pgreen('OK'))
+                    else:
+                        print(self.pred('Error'))
+                        print(self.pred('   Item {} is not set properly (missing Path or Enabled)'.format(n)))
+                        self.error.append('Item {} is not set properly (missing Path or Enabled)'.format(n))
+                    n += 1
+                    time.sleep(0.05)
+            else:
+                print(self.pgray('Skipped'))
                 time.sleep(0.05)
+            print('Checking Tools -> Misc/Tools... ',end='')
+            if tools != []:
+                print('')
+                for tool in tools:
+                    print(' - Checking {}... '.format(tool), end='')
+                    b = False
+                    for item in self.config['Misc']['Tools']:
+                        if 'Enabled' in item and 'Path' in item:
+                            if tool == item['Path'] and item['Enabled']:
+                                b = True
+                                break
+                    if b:
+                        print(self.pgreen('OK'))
+                    else:
+                        print(self.pred('Error'))
+                        print(self.pred('   {} exists in Tools folder but not set properly in config.plist'.format(tool)))
+                        self.error.append('{} exists in Tools folder but not set properly in config.plist'.format(tool))
+            else:
+                print(self.pgray('Skipped'))
         else:
-            print(self.pgray('Skipped'))
-            time.sleep(0.05)
-        print('Checking Tools -> Misc/Tools... ',end='')
-        if tools != []:
-            print('')
-            for tool in tools:
-                print(' - Checking {}... '.format(tool))
-                for item in self.config['Misc']['Tools']:
-                    pass
-        else:
-            print('Skipped')
-
+            print(self.pgray('Skipped because of missing Misc in config.plist'))
+        print(self.pgreen('Done'))
+        time.sleep(0.5)
         self.printerror()
             
     def printerror(self):
