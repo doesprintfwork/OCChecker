@@ -110,13 +110,13 @@ class occhecker:
         }
     
     def pred(self, string):
-        return("\033[1;91m{}\033[00m" .format(string))
+        return('\033[1;91m{}\033[00m' .format(string))
 
     def pgreen(self, string):
-        return("\033[1;92m{}\033[00m" .format(string))
+        return('\033[1;92m{}\033[00m' .format(string))
 
     def pgray(self, string):
-        return("\033[1;90m{}\033[00m" .format(string))
+        return('\033[1;90m{}\033[00m' .format(string))
 
     def clear(self):
         if os.name == 'nt':
@@ -257,7 +257,7 @@ class occhecker:
             print('Checking {} structure... '.format(p))
             if p in self.config:
                 for x in self.configstruc[p]:
-                    print(' - {}/{}... '.format(p,x),end='')
+                    print(' - {} > {}... '.format(p,x),end='')
                     if x in self.config[p]:
                         print(self.pgreen('OK'))
                     else:
@@ -278,9 +278,9 @@ class occhecker:
         print('')
         for q in self.quirks:
             if q in self.config:
-                print('Checking {}/Quirks'.format(q))
+                print('Checking {} > Quirks'.format(q))
                 for quirk in self.quirks[q]:
-                    print(' - Checking {}/Quirks/{}... '.format(q,quirk), end='')
+                    print(' - Checking {} > Quirks > {}... '.format(q,quirk), end='')
                     if quirk in self.config[q]['Quirks']:
                         if self.quirks[q][quirk] == self.config[q]['Quirks'][quirk]:
                             print(self.pgreen('OK'))
@@ -314,7 +314,7 @@ class occhecker:
             self.filtered_files[folder] = temp_array
         for folder in self.folders:
             if folder in self.config:
-                print('Checking {} folder -> {}/Add... '.format(self.folders[folder],folder),end='')
+                print('Checking {} folder -> {} > Add... '.format(self.folders[folder],folder),end='')
                 if self.filtered_files[folder] != []:
                     print('')
                     for f in self.filtered_files[folder]:
@@ -343,7 +343,7 @@ class occhecker:
                 else:
                     print(self.pgray('Skipped'))
                     time.sleep(0.05)
-                print('Checking {}/Add -> {} folder... '.format(folder,self.folders[folder]), end='')
+                print('Checking {} > Add -> {} folder... '.format(folder,self.folders[folder]), end='')
                 if self.config[folder]['Add'] != []:
                     print('')
                     for item in self.config[folder]['Add']:
@@ -351,8 +351,8 @@ class occhecker:
                             print(' - Checking {}... '.format(item[self.paths[folder]]), end='')
                             if item[self.paths[folder]] not in self.filtered_files[folder]:
                                 print(self.pred('Error'))
-                                print(self.pred("   Enabled {} in config.plist which doesn't exist".format(item[self.paths[folder]])))
-                                self.error.append("Enabled {} in config.plist which doesn't exist".format(item[self.paths[folder]]))
+                                print(self.pred('   Enabled {} in config.plist which does not exist'.format(item[self.paths[folder]])))
+                                self.error.append('Enabled {} in config.plist which does not exist'.format(item[self.paths[folder]]))
                             else:
                                 print(self.pgreen('OK'))
                         time.sleep(0.05)
@@ -360,7 +360,7 @@ class occhecker:
                     print(self.pgray('Skipped'))
                     time.sleep(0.05)
             else:
-                print(self.pgray('Skipping {}/Add because of missing {} in config.plist'.format(folder,folder)))
+                print(self.pgray('Skipping {} > Add because of missing {} in config.plist'.format(folder,folder)))
                 time.sleep(0.05)
         time.sleep(0.5)
         print(self.pgreen('Done'))
@@ -370,12 +370,12 @@ class occhecker:
         checklist = ['ExecutablePath', 'PlistPath']
         self.clear()
         for check in checklist:
-            self.title('Checking {} in Kernel/Add...'.format(check))
+            self.title('Checking {} in Kernel > Add...'.format(check))
             print('')
             os.chdir('./Kexts')
             kexts = self.filtered_files['Kernel']
             if 'Kernel' in self.config:
-                print('Checking Kernel/Add -> Kexts folder... ',end='')
+                print('Checking Kernel > Add -> Kexts folder... ',end='')
                 if self.config['Kernel']['Add'] != []:
                     print('')
                     for item in self.config['Kernel']['Add']:
@@ -388,8 +388,8 @@ class occhecker:
                                     print(self.pgreen('OK'))
                                 else:
                                     print(self.pred('Error'))
-                                    print(self.pred("   {} under {} is set which doesn't exist".format(check,kextbundle)))
-                                    self.error.append("{} under {} is set which doesn't exist".format(check,kextbundle))
+                                    print(self.pred('   {} under {} is set which does not exist'.format(check,kextbundle)))
+                                    self.error.append('{} under {} is set which does not exist'.format(check,kextbundle))
                             else:
                                 print(self.pgray('Skipped'))
                         else:
@@ -397,7 +397,7 @@ class occhecker:
                         time.sleep(0.05)
                 else:
                     print(self.pgray('Skipped'))
-                print('Checking Kexts folder -> Kernel/Add... ',end='')
+                print('Checking Kexts folder -> Kernel > Add... ',end='')
                 if kexts != []:
                     print('')
                     for kext in kexts:
@@ -440,7 +440,7 @@ class occhecker:
             if tool.endswith('.efi') and not tool.startswith('._'):
                 tools.append(tool)
         if 'Misc' in self.config:
-            print('Checking Misc/Tools -> Tools... ',end='')
+            print('Checking Misc > Tools -> Tools... ',end='')
             if self.config['Misc']['Tools'] != []:
                 print('')
                 n = 0
@@ -448,7 +448,7 @@ class occhecker:
                     print(' - Checking {}... '.format(tool['Path']), end='')
                     if 'Path' in tool and 'Enabled' in tool:
                         path = tool['Path']
-                        if os.path.exists('./Tools/{}'.format(path)):
+                        if path in tools:
                             if tool['Enabled']:
                                 print(self.pgreen('OK'))
                             else:
@@ -457,8 +457,8 @@ class occhecker:
                                 self.error.append('Disabled {} which exists in Tools'.format(path))
                         elif tool['Enabled']:
                             print(self.pred('Error'))
-                            print(self.pred("   Enabled {} which doesn't exist in Tools".format(path)))
-                            self.error.append("Enabled {} which doesn't exist in Tools".format(path))
+                            print(self.pred('   Enabled {} which does not exist in Tools'.format(path)))
+                            self.error.append('Enabled {} which does not exist in Tools'.format(path))
                         else:
                             print(self.pgreen('OK'))
                     else:
@@ -470,7 +470,7 @@ class occhecker:
             else:
                 print(self.pgray('Skipped'))
                 time.sleep(0.05)
-            print('Checking Tools -> Misc/Tools... ',end='')
+            print('Checking Tools -> Misc > Tools... ',end='')
             if tools != []:
                 print('')
                 for tool in tools:
@@ -538,5 +538,5 @@ class occhecker:
         self.printerror()
         
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     occhecker().main()
