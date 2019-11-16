@@ -493,6 +493,46 @@ class occhecker:
             print(self.pgray('Skipped because of missing Misc in config.plist'))
         print(self.pgreen('Done'))
         time.sleep(0.5)
+
+    def checkdrivers(self):
+        self.clear()
+        self.title('Checking Drivers...')
+        print('')
+        if 'UEFI' in self.config:
+            print('Checking UEFI > Drivers -> Drivers... ',end='')
+            if 'Drivers' in self.config['UEFI']:
+                print('')
+                unfiltered_drivers = os.listdir('./Drivers')
+                drivers = []
+                for driver in unfiltered_drivers:
+                    if driver.endswith('.efi') and not driver.startswith('._'):
+                        drivers.append(driver)
+                for driver in self.config['UEFI']['Drivers']:
+                    print(' - Checking {}... '.format(driver), end='')
+                    if driver in drivers:
+                        print(self.pgreen('OK'))
+                    else:
+                        print(self.pred('Error'))
+                        print(self.pred('   Injected {} in UEFI > Drivers which does not exist in Drivers folder'.format(driver)))
+                        self.error.append('Injected {} in UEFI > Drivers which does not exist in Drivers folder'.format(driver))
+                for driver in drivers:
+                    print(' - Checking {}... '.format(driver), end='')
+                    b = False
+                    for item in self.config['UEFI']['Drivers']:
+                        if driver == item:
+                            b = True
+                            break
+                    if b:
+                        print(self.pgreen('OK'))
+                    else:
+                        print(self.pred('Error'))
+                        print(self.pred('   Missing {} in config.plist'.format(driver)))
+                        self.error.append('Missing {} in config.plist'.format(driver))
+            else:
+                print(self.pgray('Skipped'))
+        else:
+            print(self.pgray('Skipped because of missing UEFI in config.plist'))
+        time.sleep(0.05)
             
     def printerror(self):
         self.clear()
