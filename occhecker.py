@@ -151,7 +151,6 @@ class occhecker:
             os.chdir(self.efiloc)
         else:
             os.chdir('../')
-        self.checkfiles()
 
     def checkfiles(self):
         # Now we are in the OC folder
@@ -232,7 +231,6 @@ class occhecker:
         print(self.pgreen('Done'))
         time.sleep(1)
         os.chdir('../')
-        self.checkpliststc()
 
     def checkpliststc(self):
         self.clear()
@@ -273,7 +271,6 @@ class occhecker:
         time.sleep(0.5)
         print(self.pgreen('Done'))
         time.sleep(1)
-        self.checkquirks()
 
     def checkquirks(self):
         self.clear()
@@ -302,7 +299,6 @@ class occhecker:
         time.sleep(0.5)
         print(self.pgreen('Done'))
         time.sleep(1)
-        self.checkaddpath()
 
     def checkaddpath(self):
         self.clear()
@@ -369,7 +365,6 @@ class occhecker:
         time.sleep(0.5)
         print(self.pgreen('Done'))
         time.sleep(1)
-        self.checkkernel()
 
     def checkkernel(self):
         checklist = ['ExecutablePath', 'PlistPath']
@@ -433,7 +428,6 @@ class occhecker:
             time.sleep(1)
             os.chdir('../')
             self.clear()
-        self.checktools()
 
     def checktools(self):
         self.clear()
@@ -499,7 +493,6 @@ class occhecker:
             print(self.pgray('Skipped because of missing Misc in config.plist'))
         print(self.pgreen('Done'))
         time.sleep(0.5)
-        self.printerror()
             
     def printerror(self):
         self.clear()
@@ -518,8 +511,31 @@ class occhecker:
     def main(self):
         # Clear the window first
         self.clear()
+
         # We need to gather some information first
         self.info()
+
+        # We now have the folder so we are going to check if all the files are in place
+        self.checkfiles()
+
+        # Load config.plist and check the structure
+        self.checkpliststc()
+
+        # Check all quirks settings
+        self.checkquirks()
+
+        # Check if all the Add path are set correctly
+        self.checkaddpath()
+
+        # Check Kernel part of config.plist
+        self.checkkernel()
+
+        # Check Tools and Drivers are injected correctly in config.plist
+        self.checktools()
+        self.checkdrivers()
+
+        # Finished everything so print out all errors
+        self.printerror()
         
 
 if __name__ == "__main__":
