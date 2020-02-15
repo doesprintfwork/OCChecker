@@ -1,6 +1,6 @@
 # OC Checker
  
-For checking your OC setup
+Cross-platform OpenCore setup checker
 
 *Currently only available for AMD*
 
