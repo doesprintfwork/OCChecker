@@ -370,12 +370,15 @@ class occhecker:
                             kextbundle = item['BundlePath']
                             kextcheck = item[check]
                             if kextcheck != '':
-                                if os.path.isfile('{}/{}'.format(kextbundle,kextcheck)):
-                                    print(self.pgreen('OK'))
+                                if item['Enabled']:
+                                    if os.path.isfile('{}/{}'.format(kextbundle,kextcheck)):
+                                        print(self.pgreen('OK'))
+                                    else:
+                                        print(self.pred('Error'))
+                                        print(self.pred('   {} under {} is set which does not exist'.format(check,kextbundle)))
+                                        self.error.append('{} under {} is set which does not exist'.format(check,kextbundle))
                                 else:
-                                    print(self.pred('Error'))
-                                    print(self.pred('   {} under {} is set which does not exist'.format(check,kextbundle)))
-                                    self.error.append('{} under {} is set which does not exist'.format(check,kextbundle))
+                                    print(self.pgray('Skipped'))
                             else:
                                 print(self.pgray('Skipped'))
                         else:
