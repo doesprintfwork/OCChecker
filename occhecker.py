@@ -561,8 +561,9 @@ class occhecker:
         self.clear()
         self.title('Checking other stuffs')
         print('')
-        print('Checking Misc')
+        print('Checking Misc... ',end='')
         if 'Misc' in self.config:
+            print('')
             for part in self.others['Misc']:
                 print(' - Checking Misc > {}... '.format(part),end='')
                 if part in self.config['Misc']:
@@ -585,7 +586,28 @@ class occhecker:
                     print(self.pgray('Skipped because of missing Misc > {} in config.plist'.format(part)))
                     time.sleep(0.01)
         else:
-            print(self.pgray('SkIpPeD bEcAuSe Of MiSsInG mIsC iN cOnFiG.pLiSt'))
+            print(self.pgray('SkIpPeD'))
+            print(self.pgray('SkIpPeD bEcAuSe Of MiSsInG Misc iN config.plist'))
+            time.sleep(0.01)
+        time.sleep(0.1)
+        self.clear()
+        self.title('Checking other stuffs')
+        print('')
+        print('Checking PlatformInfo... ',end='')
+        if 'PlatformInfo' in self.config:
+            print('')
+            for setting in self.others['PlatformInfo']:
+                print(' - Checking PlatformInfo > {}... '.format(setting),end='')
+                if self.config['PlatformInfo'][setting] == self.others['PlatformInfo'][setting]:
+                    print(self.pgreen('OK'))
+                else:
+                    print(self.pred('Error'))
+                    print(self.pred('   PlatformInfo > {} should be set to {}'.format(setting, self.others['PlatformInfo'][setting])))
+                    self.error.append('PlatformInfo > {} should be set to {}'.format(setting, self.others['PlatformInfo'][setting]))
+                time.sleep(0.01)
+        else:
+            print(self.pgray('Skipped'))
+            print(self.pgray('Skipped because of missing PlatformInfo in config.plist'))
             time.sleep(0.01)
         time.sleep(0.1)
                             
