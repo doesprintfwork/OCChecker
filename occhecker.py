@@ -4,7 +4,7 @@ class occhecker:
 
     def __init__(self):
         self.drivers = ['FwRuntimeServices.efi', 'ApfsDriverLoader.efi', 'HFSPlus.efi']
-        self.kexts = ['Lilu.kext', 'WhateverGreen.kext', 'NullCPUPowerManagement.kext']
+        self.kexts = ['Lilu.kext', 'WhateverGreen.kext']
         self.bootfiles = 'BOOTX64.efi'
         self.ocfolder = ['ACPI', 'Drivers', 'Kexts', 'Tools', 'config.plist', 'OpenCore.efi']
         self.configstruc = {
@@ -18,6 +18,7 @@ class occhecker:
             'UEFI': ['ConnectDrivers', 'Drivers', 'Input', 'Protocols', 'Quirks']
         }
         self.error = []
+        self.warning = []
         self.acpi = ['Add','Block','Patch','Quirks']
         self.booter = ['Quirks']
         self.deviceproperties = ['Add','Block']
@@ -27,44 +28,27 @@ class occhecker:
         self.platforminfo = ['Automatic','Generic','UpdateDataHub','UpdateNVRAM','UpdateSMBIOS','UpdateSMBIOSMode']
         self.uefi = ['ConnectDrivers','Drivers','Input','Protocols','Quirks']
         self.quirks = {
-            'ACPI': {
-                'FadtEnableReset': False,
-                'NormalizeHeaders': False,
-                'RebaseRegions': False,
-                'ResetHwSig': False,
-                'ResetLogoStatus': False
-            }, 
             'Booter': {
                 'AvoidRuntimeDefrag': True,
-                'DevirtualiseMmio': False,
-                'DisableVariableWrite': False,
-                'DiscardHibernateMap': False,
                 'EnableSafeModeSlide': True,
                 'EnableWriteUnprotector': True,
-                'ForceExitBootServices': False,
-                'ProtectCsmRegion': False,
                 'ProvideCustomSlide': True,
                 'SetupVirtualMap': True,
-                'ShrinkMemoryMap': False,
             }, 
             'Kernel': {
-                'AppleXcpmExtraMsrs': False,
-                'CustomSMBIOSGuid': False,
+                'DummyPowerManagement': True,
                 'DisableIoMapper': True,
                 'PanicNoKextDump': True,
                 'PowerTimeoutKernelPanic': True
             }, 
             'UEFI': {
-                'AvoidHighAlloc': False,
                 'ExitBootServicesDelay': 0,
-                'IgnoreInvalidFlexRatio': False,
+                'RequestBootVarFallback': True,
+                'RequestBootVarRouting': True,
                 'ProvideConsoleGop': True
             }
         }
         self.others = {
-            'Kernel': {
-                'Emulate':{}
-            },
             'Misc': {
                 'Boot': {
                     'HibernateMode': 'None',
@@ -80,11 +64,6 @@ class occhecker:
                     'ScanPolicy': 0
                 }
             },
-            'NVRAM': {
-                '7C436110-AB2A-4BBB-A880-FE41995C9F82': {
-                    'csr-active-config': b'\xe7\x03\x00\x00'
-                }
-            },
             'PlatformInfo': {
                 'Automatic': True,
                 'UpdateDataHub': True,
@@ -93,7 +72,10 @@ class occhecker:
                 'UpdateSMBIOSMode': 'Create'
             },
             'UEFI': {
-                'ConnectDrivers': True
+                'ConnectDrivers': True,
+                'Protocols': {
+                    'ConsoleControl': True
+                }
             }
         }
         self.folders = {
@@ -110,13 +92,16 @@ class occhecker:
         }
     
     def pred(self, string):
-        return('\033[1;91m{}\033[00m' .format(string))
+        return('\033[1;91m{}\033[00m'.format(string))
 
     def pgreen(self, string):
-        return('\033[1;92m{}\033[00m' .format(string))
+        return('\033[1;92m{}\033[00m'.format(string))
 
     def pgray(self, string):
-        return('\033[1;90m{}\033[00m' .format(string))
+        return('\033[1;90m{}\033[00m'.format(string))
+    
+    def pyellow(self, string):
+        return('\033[1;93m{}\033[00m'.format(string))
 
     def clear(self):
         if os.name == 'nt':
@@ -139,7 +124,12 @@ class occhecker:
         for d in self.ocfolder:
             if not os.path.exists(d):
                 isOCfolder = False
-        time.sleep(0.05)
+        time.sleep(0.1)
+        if isOCfolder:
+            print(self.pgreen('OK'))
+        else:
+            print(self.pgray('Nope'))
+        time.sleep(0.1)
         self.clear()
         self.title('Gathering information...')
         print('')
@@ -172,7 +162,7 @@ class occhecker:
             print('')
             input('Press any key to exit... ')
             sys.exit()
-        time.sleep(0.05)
+        time.sleep(0.01)
 
         print('Checking BOOT folder... ', end='')
         if os.path.exists('./BOOT/BOOTX64.efi'):
@@ -181,7 +171,7 @@ class occhecker:
             print(self.pred('Error'))
             print(self.pred('   Missing BOOTX64.efi'))
             self.error.append('Missing BOOTX64.efi')
-        time.sleep(0.05)
+        time.sleep(0.01)
 
         print('Checking OC folder...')
         os.chdir('./OC')
@@ -193,8 +183,8 @@ class occhecker:
                 input('Press any key to exit...')
                 sys.exit()
             print(self.pgreen('OK'))
-            time.sleep(0.05)
-        time.sleep(0.05)
+            time.sleep(0.01)
+        time.sleep(0.01)
 
         print('Checking needed kexts in Kexts folder...')
         os.chdir('./Kexts')
@@ -206,15 +196,15 @@ class occhecker:
                 print(self.pred('Error'))
                 print(self.pred('Missing {}'.format(k)))
                 self.error.append('Missing {}'.format(k))
-            time.sleep(0.05)
+            time.sleep(0.01)
         print(' - {}... '.format('FakeSMC.kext or VirtualSMC.kext'),end='')
         if os.path.exists('FakeSMC.kext') or os.path.exists('VirtualSMC.kext'):
             print(self.pgreen('OK'))
         else:
-            print(self.pred('Error'))
-            print(self.pred('   Missing FakeSMC.kext or VirtualSMC.kext'))
-            self.error.append('Missing FakeSMC.kext or VirtualSMC.kext in Kexts folder')
-        time.sleep(0.05)
+            print(self.pred('Warning'))
+            print(self.pyellow('   Missing FakeSMC.kext or VirtualSMC.kext'))
+            self.warning.append('Missing FakeSMC.kext or VirtualSMC.kext in Kexts folder')
+        time.sleep(0.01)
 
         print('Checking needed drivers in Drivers folder...')
         os.chdir('../Drivers')
@@ -223,13 +213,12 @@ class occhecker:
             if os.path.exists(d):
                 print(self.pgreen('OK'))
             else:
-                print(self.pred('Error'))
-                print(self.pred('   Missing {}'.format(d)))
-                self.error.append('Missing {} in Drivers folder'.format(d))
-            time.sleep(0.05)
-        time.sleep(0.5)
+                print(self.pred('Warning'))
+                print(self.pyellow('   Missing {}'.format(d)))
+                self.warning.append('Missing {} in Drivers folder'.format(d))
+            time.sleep(0.01)
         print(self.pgreen('Done'))
-        time.sleep(1)
+        time.sleep(0.1)
         os.chdir('../')
 
     def checkpliststc(self):
@@ -240,7 +229,7 @@ class occhecker:
         c = open('config.plist', 'rb')
         self.config = plistlib.load(c)
         print(self.pgreen('Done'))
-        time.sleep(0.05)
+        time.sleep(0.01)
 
         print('Checking root config structure...')
         for x in self.configstruc:
@@ -251,7 +240,7 @@ class occhecker:
                 print(self.pred('Error'))
                 print(self.pred('   Missing {} in config.plist'.format(x)))
                 self.error.append('Missing {} in config.plist'.format(x))
-            time.sleep(0.05)
+            time.sleep(0.01)
 
         for p in self.configstruc:
             print('Checking {} structure... '.format(p))
@@ -264,13 +253,12 @@ class occhecker:
                         print(self.pred('Error'))
                         print(self.pred('Missing {} -> {} in config.plist'.format(p,x)))
                         self.error.append('Missing {} -> {} in config.plist'.format(p,x))
-                    time.sleep(0.05)
+                    time.sleep(0.01)
             else:
                 print(self.pgray('Skipped because of missing {}'.format(p)))
-                time.sleep(0.05)
-        time.sleep(0.5)
+                time.sleep(0.01)
         print(self.pgreen('Done'))
-        time.sleep(1)
+        time.sleep(0.1)
 
     def checkquirks(self):
         self.clear()
@@ -290,15 +278,14 @@ class occhecker:
                             self.error.append('{} > Quirks > {} should be set to {}'.format(q,quirk, self.quirks[q][quirk]))
                     else:
                         print(self.pred('Error'))
-                        print(self.pred('   Missing {} > Quirks > {} in config.plist'.format(q,quirk)))
-                        self.error.append('Missing {} > Quirks > {} in config.plist'.format(q,quirk))
-                    time.sleep(0.05)
+                        print(self.pred('   Missing {} > Quirks > {} in config.plist and should be set to {}'.format(q,quirk,self.quirks[q][quirk])))
+                        self.error.append('Missing {} > Quirks > {} in config.plist and should be set to {}'.format(q,quirk,self.quirks[q][quirk]))
+                    time.sleep(0.01)
             else:
                 print(self.pgray('Skipping {} part because of missing {} in config.plist...'.format(q,q)))
-                time.sleep(0.05)
-        time.sleep(0.5)
+                time.sleep(0.01)
         print(self.pgreen('Done'))
-        time.sleep(1)
+        time.sleep(0.1)
 
     def checkaddpath(self):
         self.clear()
@@ -325,24 +312,24 @@ class occhecker:
                                 b = True
                                 if 'Enabled' in item:
                                     if not item['Enabled']:
-                                        print(self.pred('Error'))
-                                        print(self.pred('   Enabled is not set to True in {} > Add > {}'.format(folder,f)))
-                                        self.error.append('Enabled is not set to True in {} > Add > {}'.format(folder,f))
+                                        print(self.pred('Warning'))
+                                        print(self.pyellow('   Enabled is not set to True in {} > Add > {}'.format(folder,f)))
+                                        self.warning.append('Enabled is not set to True in {} > Add > {}'.format(folder,f))
                                     else:
                                         print(self.pgreen('OK'))
                                 else:
-                                    print(self.pred('Error'))
-                                    print(self.pred('    Enabled is not set in {} > Add > {}'.format(folder,f)))
-                                    self.error.append('Enabled is not set in {} > Add > {}'.format(folder,f))
+                                    print(self.pyellow('Warning'))
+                                    print(self.pyellow('    Missing Enable in {} > Add > {}'.format(folder,f)))
+                                    self.warning.append('Missing Enable in {} > Add > {}'.format(folder,f))
                                 break
                         if not b:
-                            print(self.pred('Error'))
-                            print(self.pred('   Missing {} in {} > Add'.format(folder,f)))
-                            self.error.append('Missing {} in {} > Add'.format(folder,f))
-                        time.sleep(0.05)
+                            print(self.pred('Warning'))
+                            print(self.pyellow('   Missing {} in {} > Add'.format(folder,f)))
+                            self.warning.append('Missing {} in {} > Add'.format(folder,f))
+                        time.sleep(0.01)
                 else:
                     print(self.pgray('Skipped'))
-                    time.sleep(0.05)
+                    time.sleep(0.01)
                 print('Checking {} > Add -> {} folder... '.format(folder,self.folders[folder]), end='')
                 if self.config[folder]['Add'] != []:
                     print('')
@@ -355,16 +342,15 @@ class occhecker:
                                 self.error.append('Enabled {} in config.plist which does not exist'.format(item[self.paths[folder]]))
                             else:
                                 print(self.pgreen('OK'))
-                        time.sleep(0.05)
+                        time.sleep(0.01)
                 else:
                     print(self.pgray('Skipped'))
-                    time.sleep(0.05)
+                    time.sleep(0.01)
             else:
                 print(self.pgray('Skipping {} > Add because of missing {} in config.plist'.format(folder,folder)))
-                time.sleep(0.05)
-        time.sleep(0.5)
+                time.sleep(0.01)
         print(self.pgreen('Done'))
-        time.sleep(1)
+        time.sleep(0.1)
 
     def checkkernel(self):
         checklist = ['ExecutablePath', 'PlistPath']
@@ -394,7 +380,7 @@ class occhecker:
                                 print(self.pgray('Skipped'))
                         else:
                             print(self.pgray('Skipped'))
-                        time.sleep(0.05)
+                        time.sleep(0.01)
                 else:
                     print(self.pgray('Skipped'))
                 print('Checking Kexts folder -> Kernel > Add... ',end='')
@@ -418,14 +404,13 @@ class occhecker:
                                 self.error.append('{} has an {} but not set in config.plist'.format(kextbundle, 'executable file' if check == 'ExecutablePath' else 'info.plist'))
                         else:
                             print(self.pgray('Skipped'))
-                        time.sleep(0.05)
+                        time.sleep(0.01)
                 else:
                     print(self.pgray('Skipped'))
             else:
                 print(self.pgray('Skipped because of missing Kernel in config.plist'))
-            time.sleep(0.5)
             print(self.pgreen('Done'))
-            time.sleep(1)
+            time.sleep(0.1)
             os.chdir('../')
             self.clear()
 
@@ -433,7 +418,7 @@ class occhecker:
         self.clear()
         self.title('Checking Tools...')
         print('')
-        time.sleep(0.05)
+        time.sleep(0.01)
         unfiltered_tools = os.listdir('Tools')
         tools = []
         for tool in unfiltered_tools:
@@ -466,10 +451,10 @@ class occhecker:
                         print(self.pred('   Item {} is not set properly (missing Path or Enabled)'.format(n)))
                         self.error.append('Item {} is not set properly (missing Path or Enabled)'.format(n))
                     n += 1
-                    time.sleep(0.05)
+                    time.sleep(0.01)
             else:
                 print(self.pgray('Skipped'))
-                time.sleep(0.05)
+                time.sleep(0.01)
             print('Checking Tools -> Misc > Tools... ',end='')
             if tools != []:
                 print('')
@@ -492,7 +477,7 @@ class occhecker:
         else:
             print(self.pgray('Skipped because of missing Misc in config.plist'))
         print(self.pgreen('Done'))
-        time.sleep(0.5)
+        time.sleep(0.1)
 
     def checkdrivers(self):
         self.clear()
@@ -515,6 +500,7 @@ class occhecker:
                         print(self.pred('Error'))
                         print(self.pred('   Injected {} in UEFI > Drivers which does not exist in Drivers folder'.format(driver)))
                         self.error.append('Injected {} in UEFI > Drivers which does not exist in Drivers folder'.format(driver))
+                    time.sleep(0.01)
                 for driver in drivers:
                     print(' - Checking {}... '.format(driver), end='')
                     b = False
@@ -528,16 +514,93 @@ class occhecker:
                         print(self.pred('Error'))
                         print(self.pred('   Missing {} in config.plist'.format(driver)))
                         self.error.append('Missing {} in config.plist'.format(driver))
+                    time.sleep(0.01)
             else:
                 print(self.pgray('Skipped'))
+                time.sleep(0.01)
         else:
             print(self.pgray('Skipped because of missing UEFI in config.plist'))
-        time.sleep(0.05)
+        print(self.pgreen('Done'))
+        time.sleep(0.1)
             
+    def checkemulate(self):
+        self.clear()
+        self.title('Checking Kernel Emulate...')
+        print('')
+        print('Checking Kernel > Emulate... ',end='')
+        if 'Kernel' in self.config:
+            if 'Emulate' in self.config['Kernel']:
+                if self.config['Kernel']['Emulate'] == {}:
+                    print(self.pgreen('OK'))
+                elif 'CpuidMask' in self.config['Kernel']['Emulate']:
+                    if self.config['Kernel']['Emulate']['CpuidMask'] == b'':
+                        print(self.pgreen('OK'))
+                    else:
+                        print(self.pred('Error'))
+                        print(self.pred('Kernel > Emulate > CpuidMask should be empty'))
+                        self.error.append('Kernel > Emulate > CpuidMask should be empty')
+                elif 'CpuidData' in self.config['Kernel']['Emulate']:
+                    if self.config['Kernel']['Emulate']['CpuidData'] == b'':
+                        print(self.pgreen('OK'))
+                    else:
+                        print(self.pred('Error'))
+                        print(self.pred('Kernel > Emulate > CpuidData should be empty'))
+                        self.error.append('Kernel > Emulate > CpuidData should be empty')
+                else:
+                    print(self.pred('Error'))
+                    print(self.pred('Emulate should be empty'))
+                    self.error.append('Emulate should be empty')
+            else:
+                print(self.pgreen('OK'))
+        else:
+            print('')
+            print(self.pgray('Skipped because of missing Kernel in config.plist'))
+        time.sleep(0.1)
+
+    def checkother(self):
+        self.clear()
+        self.title('Checking other stuffs')
+        print('')
+        print('Checking Misc')
+        if 'Misc' in self.config:
+            for part in self.others['Misc']:
+                print(' - Checking Misc > {}... '.format(part),end='')
+                if part in self.config['Misc']:
+                    print('')
+                    for setting in self.others['Misc'][part]:
+                        print('  - Checking Misc > {} > {}... '.format(part, setting),end='')
+                        if setting in self.config['Misc'][part]:
+                            if self.config['Misc'][part][setting] == self.others['Misc'][part][setting]:
+                                print(self.pgreen('OK'))
+                            else:
+                                print(self.pred('Error'))
+                                print(self.pred('    Misc > {} > {} should be set to {}'.format(part, setting, self.others['Misc'][part][setting])))
+                                self.error.append('Misc > {} > {} should be set to {}'.format(part, setting, self.others['Misc'][part][setting]))
+                        else:
+                            print(self.pred('Error'))
+                            print(self.pred('    Missing Misc > {} > {} and should be set to {}'.format(part, setting, self.others['Misc'][part][setting])))
+                            self.error.append('Missing Misc > {} > {} should be set to {}'.format(part, setting, self.others['Misc'][part][setting]))
+                        time.sleep(0.01)
+                else:
+                    print(self.pgray('Skipped because of missing Misc > {} in config.plist'.format(part)))
+                    time.sleep(0.01)
+        else:
+            print(self.pgray('SkIpPeD bEcAuSe Of MiSsInG mIsC iN cOnFiG.pLiSt'))
+            time.sleep(0.01)
+        time.sleep(0.1)
+                            
+
     def printerror(self):
         self.clear()
-        self.title('Errors...')
+        self.title('Warnings and errors...')
         print('')
+        print(self.pyellow('All warnings: '), end='')
+        if self.warning != []:
+            print('')
+            for n in self.warning:
+                print(self.pyellow(' - {}'.format(n)))
+        else:
+            print(self.pgreen('None'))
         print(self.pred('All errors: '), end='')
         time.sleep(0.1)
         if self.error != []:
@@ -573,6 +636,9 @@ class occhecker:
         # Check Tools and Drivers are injected correctly in config.plist
         self.checktools()
         self.checkdrivers()
+
+        self.checkemulate()
+        self.checkother()
 
         # Finished everything so print out all errors
         self.printerror()
