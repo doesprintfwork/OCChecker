@@ -598,19 +598,64 @@ class occhecker:
             print('')
             for setting in self.others['PlatformInfo']:
                 print(' - Checking PlatformInfo > {}... '.format(setting),end='')
-                if self.config['PlatformInfo'][setting] == self.others['PlatformInfo'][setting]:
-                    print(self.pgreen('OK'))
+                if setting in self.config['PlatformInfo']:
+                    if self.config['PlatformInfo'][setting] == self.others['PlatformInfo'][setting]:
+                        print(self.pgreen('OK'))
+                    else:
+                        print(self.pred('Error'))
+                        print(self.pred('   PlatformInfo > {} should be set to {}'.format(setting, self.others['PlatformInfo'][setting])))
+                        self.error.append('PlatformInfo > {} should be set to {}'.format(setting, self.others['PlatformInfo'][setting]))
                 else:
                     print(self.pred('Error'))
-                    print(self.pred('   PlatformInfo > {} should be set to {}'.format(setting, self.others['PlatformInfo'][setting])))
-                    self.error.append('PlatformInfo > {} should be set to {}'.format(setting, self.others['PlatformInfo'][setting]))
+                    print(self.pred('   Missing PlatformInfo > {} and should be set to {}'.format(setting,self.others['PlatformInfo'][setting])))
+                    self.error.append('Missing PlatformInfo > {} and should be set to {}'.format(setting, self.others['PlatformInfo'][setting]))
                 time.sleep(0.01)
         else:
             print(self.pgray('Skipped'))
             print(self.pgray('Skipped because of missing PlatformInfo in config.plist'))
             time.sleep(0.01)
         time.sleep(0.1)
-                            
+        self.clear()
+        self.title('Checking other stuffs')
+        print('')
+        print('Checking UEFI... ',end='')
+        if 'UEFI' in self.others:
+            print('')
+            for setting in self.others['UEFI']:
+                print(' - Checking UEFI > {}... '.format(setting), end='')
+                if setting in self.config['UEFI']:
+                    if type(self.config['UEFI'][setting]) != dict:
+                        if self.config['UEFI'][setting] == self.others['UEFI'][setting]:
+                            print(self.pgreen('OK'))
+                        else:
+                            print(self.pred('Error'))
+                            print(self.pred('   UEFI > {} should be set to {}'.format(setting, self.others['UEFI'][setting])))
+                            self.error.append('UEFI > {} should be set to {}'.format(setting, self.others['UEFI'][setting]))
+                    else:
+                        print('')
+                        for item in self.others['UEFI'][setting]:
+                            print('   - Checking UEFI > {} > {}... '.format(setting, item),end='')
+                            if item in self.config['UEFI'][setting]:
+                                if self.config['UEFI'][setting][item] == self.others['UEFI'][setting][item]:
+                                    print(self.pgreen('OK'))
+                                else:
+                                    print(self.pred('Error'))
+                                    print(self.pred('   UEFI > {} > {} should be set to {}'.format(setting, item, self.others['UEFI'][setting][item])))
+                                    self.error.append('UEFI > {} > {} should be set to {}'.format(setting, item, self.others['UEFI'][setting][item]))
+                            else:
+                                print(self.pred('Error'))
+                                print(self.pred('   Missing UEFI > {} > {} and should be set to {}'.format(setting, item ,self.others['UEFI'][setting][item])))
+                                self.error.append('Missing UEFI > {} > {} and should be set to {}'.format(setting, item, self.others['UEFI'][setting][item]))
+                            time.sleep(0.01)
+                else:
+                    print(self.pred('Error'))
+                    print(self.pred('   Missing UEFI > {} and should be set to {}'.format(setting, self.others['UEFI'][setting])))
+                    self.error.append('Missing UEFI > {} and should be set to {}'.format(setting, self.others['UEFI'][setting]))
+                time.sleep(0.01)
+        else:
+            print(self.pgray('Skipped'))
+            print(self.pgray('Skipped because of missing UEFI in config.plist'))
+                        
 
     def printerror(self):
         self.clear()
@@ -659,6 +704,7 @@ class occhecker:
         self.checktools()
         self.checkdrivers()
 
+        # Check other stuffs
         self.checkemulate()
         self.checkother()
 
